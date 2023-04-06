@@ -39,6 +39,14 @@ cd llp-tracker
 pnpm run dev
 ```
 
+To develop single apps, run the dev command with filter. Eg, to run frontend app
+
+```sh
+pnpm -F llp-tracker-ui dev
+```
+
+[Learn more](https://turbo.build/repo/docs/core-concepts/monorepos/filtering) about filtering
+
 ## Useful Links
 
 - [Level finance app](https://app.level.finance)
