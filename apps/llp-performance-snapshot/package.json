@@ -1,0 +1,13 @@
+{
+  "name": "@levelfinance/llp-performance-snapshot",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "graph": "graph"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.37.1",
+    "@graphprotocol/graph-ts": "^0.29.3"
+  }
+}

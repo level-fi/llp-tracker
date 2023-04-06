@@ -1,0 +1,12 @@
+{
+  "exclude": ["node_modules"],
+  "extends": "tsconfig/vite.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "target": "ESNext",
+    "esModuleInterop": false,
+    "types": ["vite/client"],
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src"]
+}

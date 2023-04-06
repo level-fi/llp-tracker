@@ -1,0 +1,9 @@
+<svg width="12" height="11" viewBox="0 0 12 11" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <path d="M5.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z" id="j3mbs1bvya"/>
+        <mask id="0x2rgqen3b" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="11" height="11" fill="#fff">
+            <use xlink:href="#j3mbs1bvya"/>
+        </mask>
+    </defs>
+    <use mask="url(#0x2rgqen3b)" xlink:href="#j3mbs1bvya" transform="translate(.56 -1)" stroke="#FFB313" stroke-width="3" fill="none" fill-rule="evenodd" stroke-dasharray="27"/>
+</svg>

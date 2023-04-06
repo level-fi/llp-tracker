@@ -1,0 +1,84 @@
+enum Period {
+  daily
+  total
+}
+
+type Config @entity {
+  id: ID!
+  daoFeeRatio: BigInt!
+}
+
+# Risk factor
+type RiskFactor @entity {
+  id: ID!
+  token: Bytes!
+  totalRiskFactor: BigInt!
+  riskFactors: [BigInt!]!
+}
+
+type Tranche @entity {
+  id: ID!
+  lastHistoryIndex: Int!
+  lastPnlIndex: Int!
+  lastFeeIndex: Int!
+  llpSupply: BigInt!
+  pnlPerShare: BigInt!
+  feePerShare: BigInt!
+}
+
+type WalletTrancheHistory @entity {
+  id: ID!
+  index: Int!
+  wallet: Bytes!
+  tranche: Bytes!
+  trancheValue: BigInt!
+  llpPrice: BigInt!
+  llpAmount: BigInt!
+  llpAmountChange: BigInt!
+  tx: Bytes!
+  snapshotAtBlock: Int!
+  snapshotAtTimestamp: Int!
+}
+
+type WalletTranche @entity {
+  id: ID!
+  wallet: Bytes!
+  tranche: Bytes!
+  llpAmount: BigInt!
+}
+
+type Price @entity {
+  id: ID!
+  token: Bytes!
+  value: BigInt!
+  period: Period!
+  timestamp: Int!
+}
+
+type FeePerShare @entity {
+  id: ID!
+  index: Int!
+  tranche: Bytes!
+  value: BigInt!
+  llpSupply: BigInt!
+  timestamp: Int!
+  tx: Bytes!
+}
+
+type PnlPerShare @entity {
+  id: ID!
+  index: Int!
+  tranche: Bytes!
+  value: BigInt!
+  llpSupply: BigInt!
+  timestamp: Int!
+  tx: Bytes!
+}
+
+type LlpPrice @entity {
+  id: ID!
+  tranche: Bytes!
+  price: BigInt!
+  snapshotAtBlock: Int!
+  snapshotAtTimestamp: Int!
+}

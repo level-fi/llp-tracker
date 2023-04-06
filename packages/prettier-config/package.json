@@ -1,0 +1,12 @@
+{
+  "name": "prettier-config",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./prettier-config.json",
+  "peerDependencies": {
+    "prettier": "^2.7.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

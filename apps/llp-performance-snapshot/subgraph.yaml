@@ -1,0 +1,271 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SLP
+    network: bsc
+    source:
+      address: '0xB5C42F84Ab3f786bCA9761240546AA9cEC1f8821'
+      startBlock: 23752486
+      abi: LpToken
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LpToken
+          file: ./abis/LpToken.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mappings/lpToken.ts
+  - kind: ethereum
+    name: MLP
+    network: bsc
+    source:
+      address: '0x4265af66537F7BE1Ca60Ca6070D97531EC571BDd'
+      startBlock: 23752486
+      abi: LpToken
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LpToken
+          file: ./abis/LpToken.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mappings/lpToken.ts
+  - kind: ethereum
+    name: JLP
+    network: bsc
+    source:
+      address: '0xcC5368f152453D497061CB1fB578D2d3C54bD0A0'
+      startBlock: 23752486
+      abi: LpToken
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LpToken
+          file: ./abis/LpToken.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mappings/lpToken.ts
+  - kind: ethereum
+    name: Pool
+    network: bsc
+    source:
+      address: '0xA5aBFB56a78D2BD4689b25B8A77fd49Bb0675874'
+      startBlock: 23752485
+      abi: Pool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Tranche
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+        - name: PriceFeed
+          file: ./abis/PriceFeed.json
+      eventHandlers:
+        - event: IncreasePosition(bytes32,address,address,address,uint256,uint256,uint8,uint256,uint256)
+          handler: handlePositionIncreased
+        - event: IncreasePosition(indexed bytes32,address,address,address,uint256,uint256,uint8,uint256,uint256)
+          handler: handlePositionIncreased
+        - event: DecreasePosition(bytes32,address,address,address,uint256,uint256,uint8,uint256,(uint256,uint256),uint256)
+          handler: handlePositionDecreased
+        - event: DecreasePosition(indexed bytes32,address,address,address,uint256,uint256,uint8,uint256,(uint256,uint256),uint256)
+          handler: handlePositionDecreased
+        - event: LiquidatePosition(bytes32,address,address,address,uint8,uint256,uint256,uint256,uint256,(uint256,uint256),uint256)
+          handler: handlePositionLiquidated
+        - event: LiquidatePosition(indexed bytes32,address,address,address,uint8,uint256,uint256,uint256,uint256,(uint256,uint256),uint256)
+          handler: handlePositionLiquidated
+        - event: LiquidityAdded(indexed address,indexed
+            address,address,uint256,uint256,uint256)
+          handler: handleLiquidityAdded
+        - event: LiquidityRemoved(indexed address,indexed
+            address,address,uint256,uint256,uint256)
+          handler: handleLiquidityRemoved
+        - event: Swap(address,address,address,uint256,uint256,uint256)
+          handler: handleSwap
+        - event: Swap(indexed address,address,address,uint256,uint256,uint256)
+          handler: handleSwap
+        - event: DaoFeeSet(uint256)
+          handler: handleDaoFeeSet
+        - event: TokenRiskFactorUpdated(address)
+          handler: handleTokenRiskFactorUpdated
+        - event: TokenRiskFactorUpdated(indexed address)
+          handler: handleTokenRiskFactorUpdated
+      file: ./src/mappings/pool.ts
+  - kind: ethereum
+    name: Oracle
+    source:
+      abi: Oracle
+      address: '0x04Db83667F5d59FF61fA6BbBD894824B233b3693'
+      startBlock: 24148430
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - PriceStat
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+        - name: PriceFeed
+          file: ./abis/PriceFeed.json
+      eventHandlers:
+        - event: PricePosted(indexed address,uint256)
+          handler: handlePricePost
+        - event: PricePosted(address,uint256)
+          handler: handlePricePost
+      file: ./src/mappings/oracle.ts
+    network: bsc
+  - kind: ethereum
+    name: LockdropV1
+    source:
+      abi: Lockdrop
+      address: '0x70f1555889dD1bD458A430bD57D22c12C6FCF9a4'
+      startBlock: 23753968
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/lockdrop.ts
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: Lockdrop
+          file: ./abis/Lockdrop.json
+      eventHandlers:
+        - event: Deposited(indexed address,indexed address,address,uint256,uint256)
+          handler: handleDeposit
+        - event: ETHDeposited(indexed address,indexed address,uint256,uint256)
+          handler: handleETHDeposit
+        - event: Withdrawn(indexed address,indexed address,uint256,uint256)
+          handler: handleWithdraw
+        - event: EmergencyWithdrawn(indexed address,indexed address)
+          handler: handleEmergencyWithdraw
+          receipt: true
+    network: bsc
+  - kind: ethereum
+    name: Lockdrop
+    source:
+      abi: Lockdrop
+      address: '0xD804Ea7306abE2456Bdd04a31F6f6a2F55Dc0d21'
+      startBlock: 23835778
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/lockdrop.ts
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: Lockdrop
+          file: ./abis/Lockdrop.json
+      eventHandlers:
+        - event: Deposited(indexed address,indexed address,address,uint256,uint256)
+          handler: handleDeposit
+        - event: ETHDeposited(indexed address,indexed address,uint256,uint256)
+          handler: handleETHDeposit
+        - event: Withdrawn(indexed address,indexed address,uint256,uint256)
+          handler: handleWithdraw
+        - event: EmergencyWithdrawn(indexed address,indexed address)
+          handler: handleEmergencyWithdraw
+          receipt: true
+    network: bsc
+  - kind: ethereum
+    name: LevelMasterV1
+    source:
+      abi: LevelMaster
+      address: '0x1Ab33A7454427814a71F128109fE5B498Aa21E5d'
+      startBlock: 24146112
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/levelmaster.ts
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LevelMaster
+          file: ./abis/LevelMaster.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleDeposit
+        - event: Withdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleWithdraw
+        - event: EmergencyWithdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleEmergencyWithdraw
+    network: bsc
+  - kind: ethereum
+    name: LevelMasterV2
+    source:
+      abi: LevelMaster
+      address: '0x5aE081b6647aEF897dEc738642089D4BDa93C0e7'
+      startBlock: 24658693
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/levelmaster.ts
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LevelMaster
+          file: ./abis/LevelMaster.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleDeposit
+        - event: Withdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleWithdraw
+        - event: EmergencyWithdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleEmergencyWithdraw
+    network: bsc
