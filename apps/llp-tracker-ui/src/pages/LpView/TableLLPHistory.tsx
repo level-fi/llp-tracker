@@ -12,6 +12,8 @@ import Spinner from '../../components/Spinner';
 import Tooltip from '../../components/Tooltip';
 import { DataTableLoader } from './DataTableLoader';
 import { LiquidityTrackingModel } from '../../models/Liquidity';
+import { percentFormatter } from '../../utils/helpers';
+import { format, fromUnixTime } from 'date-fns';
 
 const genPages = (curr: number, total: number, show: number) => {
   let min: number;
@@ -103,13 +105,29 @@ const TableLLPHistory: React.FC<{
               </div>
             </th>
             <th className="font-400 pt-0 pb-12px px-10px text-right ">Total Changes</th>
+            <th className="font-400 pt-0 pb-12px px-10px text-right ">
+              <div className="flex items-center justify-end">
+                Nominal APR <Tooltip content={'Nominal APR Daily'} />
+              </div>
+            </th>
+            <th className="font-400 pt-0 pb-12px px-10px text-right ">
+              <div className="flex items-center justify-end">
+                Net APR <Tooltip content={'Net APR Daily'} />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="bg-#29292C">
           {history.data?.data.map((row: LiquidityTrackingModel, i) => (
             <tr key={i} className="b-t-1 b-#36363D text-14px hover:bg-#36363Ddd">
               <td className="b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
-                <Timestamp value={row?.timestamp} formatter="MM/dd/y HH:mm O" />
+                <Tooltip
+                  content={`${
+                    row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
+                  } ${format(fromUnixTime(row?.to), 'MMM d, yyyy HH:mm O')}`}
+                >
+                  <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />
+                </Tooltip>
               </td>
               <td className="text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
                 {formatNumber(row.amount, { fractionDigits: 2, keepTrailingZeros: true })}
@@ -147,6 +165,12 @@ const TableLLPHistory: React.FC<{
               <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
                 <CurrencyView value={row?.totalChange} />
               </td>
+              <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
+                <CurrencyView value={row?.nominalApr} percentage={true} />
+              </td>
+              <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
+                <CurrencyView value={row?.netApr} percentage={true} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -157,7 +181,13 @@ const TableLLPHistory: React.FC<{
             <div className="py-10px px-15px mb-10px bg-#29292C" key={i}>
               <div className="py-5px flex justify-between">
                 <div>Time</div>
-                <Timestamp value={row?.timestamp} formatter="MM/dd/y HH:mm O" />
+                <Tooltip
+                  content={`${
+                    row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
+                  } ${format(fromUnixTime(row?.to), 'MMM d, yyyy HH:mm O')}`}
+                >
+                  <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />
+                </Tooltip>
               </div>
               <div className="py-5px flex justify-between">
                 <div>Liquidity</div>
@@ -222,6 +252,22 @@ const TableLLPHistory: React.FC<{
                   <CurrencyView value={row?.totalChange} />
                 </div>
               </div>
+              <div className="py-5px flex justify-between">
+                <div className="flex items-center">
+                  Nominal APR <Tooltip content={'Nominal APR Daily'} />
+                </div>
+                <div>
+                  <CurrencyView value={row?.nominalApr} percentage={true} />
+                </div>
+              </div>
+              <div className="py-5px flex justify-between">
+                <div className="flex items-center">
+                  Net APR <Tooltip content={'Nominal APR Daily'} />
+                </div>
+                <div>
+                  <CurrencyView value={row?.netApr} percentage={true} />
+                </div>
+              </div>
             </div>
           );
         })}
@@ -235,7 +281,7 @@ const TableLLPHistory: React.FC<{
               setQuantity(+ev.currentTarget.value);
               onChangePage(1);
             }}
-            className="bg-#29292C p-2px border-none color-inherit outline-none"
+            className="bg-#29292C p-2px border-none color-inherit outline-none cursor-pointer"
           >
             <option value="10">10</option>
             <option value="20">20</option>
@@ -283,17 +329,32 @@ const TableLLPHistory: React.FC<{
   );
 };
 
-const CurrencyView = ({ value, options }: { value: number; options?: Partial<FormatOption> }) => {
+const CurrencyView = ({
+  value,
+  percentage,
+  options,
+}: {
+  value: number;
+  percentage?: boolean;
+  options?: Partial<FormatOption>;
+}) => {
   return (
     <span className={value == 0 ? '' : value > 0 ? 'positive' : 'negative'}>
       {value == 0 ? '' : value > 0 ? '+' : ''}
-      {formatNumber(value, {
-        currency: 'USD',
-        fractionDigits: 2,
-        keepTrailingZeros: true,
-        thousandGrouping: true,
-        ...options,
-      })}
+      {percentage
+        ? `${formatNumber(value, {
+            fractionDigits: 2,
+            keepTrailingZeros: true,
+            thousandGrouping: true,
+            ...options,
+          })}%`
+        : `${formatNumber(value, {
+            currency: 'USD',
+            fractionDigits: 2,
+            keepTrailingZeros: true,
+            thousandGrouping: true,
+            ...options,
+          })}`}
     </span>
   );
 };

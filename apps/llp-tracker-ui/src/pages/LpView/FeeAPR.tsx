@@ -1,0 +1,129 @@
+import React, { useMemo } from 'react';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { formatNumber } from '../../utils/numbers';
+import { useQuery } from '@tanstack/react-query';
+import { queryFeeAPR } from '../../utils/queries';
+import { NoData } from '../../components/NoData';
+import { unixTimeToDate } from '../../utils/times';
+import { percentFormatter } from '../../utils/helpers';
+import Spinner from '../../components/Spinner';
+import { ChartSyncActive, ChartSyncData } from '../../models/Chart';
+
+const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
+
+const syncMethod = (chartData: ChartSyncData[], active: ChartSyncActive) => {
+  if (!chartData?.length || !active) {
+    return;
+  }
+  for (let i = chartData.length - 1; i >= 0; i--) {
+    if (active.activeLabel >= chartData[i].value) {
+      return i;
+    }
+  }
+};
+
+const tooltipPercentFormatter = (value: any, _: any, item: any): string => {
+  if ((item && item.dataKey === 'nominalApr') || item.dataKey === 'netApr') {
+    return `${formatNumber(value, { compact: true, fractionDigits: 2 })}%`;
+  }
+  return formatNumber(value, { currency: 'USD', fractionDigits: 0 });
+};
+
+const tooltipLabelFormatter = unixTimeToDate('MMMM dd yyyy HH:mm');
+
+const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: Date }> = ({
+  account,
+  lpAddress,
+  start,
+  end,
+}) => {
+  const feeAprQuery = useQuery(queryFeeAPR(lpAddress, account, start, end));
+  const chartData = useMemo(() => {
+    if (feeAprQuery.isLoading || feeAprQuery.error || !feeAprQuery.data) {
+      return;
+    }
+    const minfeeApr = Math.min(...feeAprQuery.data?.map((d) => d.nominalApr));
+    const maxfeeApr = Math.max(...feeAprQuery.data?.map((d) => d.nominalApr));
+    const minfeeAndPnlApr = Math.min(...feeAprQuery.data?.map((d) => d.netApr));
+    const maxfeeAndPnlApr = Math.max(...feeAprQuery.data?.map((d) => d.netApr));
+    return {
+      minApr: Math.min(minfeeApr, minfeeAndPnlApr),
+      maxApr: Math.max(maxfeeApr, maxfeeAndPnlApr),
+      data: feeAprQuery.data,
+    };
+  }, [feeAprQuery]);
+
+  return (
+    <div className="relative min-h-380px">
+      <h4 className="m-0 mb-20px text-16px">Daily APR</h4>
+      {feeAprQuery.isLoading ? (
+        <div className="p-y-50px flex justify-center">
+          <Spinner className="text-32px" />
+        </div>
+      ) : (
+        <div>
+          <ResponsiveContainer width="100%" height={320}>
+            {chartData?.data && chartData?.data?.length ? (
+              <LineChart
+                data={chartData?.data}
+                margin={{ right: 10, left: 0, top: 10 }}
+                layout={'horizontal'}
+                syncId="trackingChart"
+                syncMethod={syncMethod}
+              >
+                <CartesianGrid strokeWidth={1} stroke={'#3C4046'} />
+                <YAxis
+                  tickFormatter={percentFormatter}
+                  width={40}
+                  stroke={'#adabab'}
+                  domain={[chartData.minApr * (chartData.minApr > 0 ? 0.8 : 1.2), chartData.maxApr * 1.2]}
+                />
+                <XAxis dataKey="timestamp" tickFormatter={xAxisDateTimeFormatter} minTickGap={20} stroke={'#adabab'} />
+                <Tooltip
+                  formatter={tooltipPercentFormatter}
+                  labelFormatter={tooltipLabelFormatter}
+                  contentStyle={{
+                    backgroundColor: '#3e3e4d',
+                    textAlign: 'left',
+                    border: 'none',
+                    borderRadius: '5px',
+                    boxShadow: '0px 2px 13px rgba(0, 0, 0, 0.3)',
+                  }}
+                  itemStyle={{
+                    paddingTop: 4,
+                    fontSize: 12,
+                  }}
+                  labelStyle={{
+                    fontSize: 12,
+                    color: '#b9b9b9',
+                    paddingBottom: 2,
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="linear"
+                  dot={false}
+                  strokeWidth={2}
+                  stroke={'#0091FF'}
+                  dataKey="nominalApr"
+                  name="Nominal APR Daily"
+                />
+                <Line
+                  type="linear"
+                  dot={false}
+                  strokeWidth={2}
+                  stroke={'#FFD339'}
+                  dataKey="netApr"
+                  name="Net APR Daily"
+                />
+              </LineChart>
+            ) : (
+              <NoData absolute>No data.</NoData>
+            )}
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+};
+export default FeeAPR;

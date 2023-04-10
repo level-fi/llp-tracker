@@ -22,6 +22,7 @@ import { SearchAddress } from '../../components/SearchAddress';
 import ButtonCopy from '../../components/ButtonCopy';
 import SyncStatus from './SyncStatus';
 import { useIsMobile } from '../../utils/hooks/useWindowSize';
+import FeeAPR from './FeeAPR';
 
 export const loader: LoaderFunction = ({ params, request }) => {
   if (!isAddress(params.address?.toLowerCase() || '')) {
@@ -174,8 +175,8 @@ const LpView: React.FC = () => {
         </div>
         <SyncStatus lpAddress={filter.tranche.address} />
         <>
-          <div className="lg-flex gap-20px">
-            <div className="rd-10px bg-#36363D py-17px px-20px flex-basis-50% flex-grow-1 min-w-320px mb-20px">
+          <div className="gap-20px lg-grid grid-cols-[1fr_1fr_1fr] ">
+            <div className="rd-10px bg-#36363D py-17px px-20px flex-grow-1 mb-20px">
               <LLPValueChange
                 account={account}
                 lpAddress={filter.tranche.address}
@@ -183,8 +184,11 @@ const LpView: React.FC = () => {
                 end={filter.end}
               />
             </div>
-            <div className="rd-10px bg-#36363D py-17px px-20px flex-basis-50% flex-grow-1 mb-20px">
+            <div className="rd-10px bg-#36363D py-17px px-20px flex-grow-1 mb-20px">
               <LLPAndBTCPrice lpAddress={filter.tranche.address} start={filter.start} end={filter.end} />
+            </div>
+            <div className="rd-10px bg-#36363D py-17px px-20px flex-grow-1 mb-20px">
+              <FeeAPR account={account} lpAddress={filter.tranche.address} start={filter.start} end={filter.end} />
             </div>
           </div>
           <div className="rd-10px bg-#36363D p-20px">

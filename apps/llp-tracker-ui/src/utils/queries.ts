@@ -2,6 +2,7 @@ import { Call, createMulticall } from './multicall';
 import { JsonRpcProvider } from 'ethers';
 import { config } from '../config';
 import {
+  FeeAprInfo,
   LiquidityDataModel,
   LiquidityTracking,
   LiquidityTrackingModel,
@@ -192,6 +193,39 @@ export const querySyncStatus = (lpAddress: string) => ({
     return (await res.json()) as QueryResult<SyncStatus>;
   },
 });
+
+export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Date) => ({
+  queryKey: ['fetch', 'feeAPR', tranche, user, getUnixTime(start), getUnixTime(end)],
+  queryFn: async () => {
+    const params = {
+      wallet: user,
+      tranche,
+      page: 1,
+      size: 1000,
+      from: getUnixTime(start),
+      to: getUnixTime(end),
+      sort: 'asc',
+    };
+    const url = createUrl(`${config?.llpTrackingApi}/charts/apr`, params);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('API fetch failed');
+    }
+    const payload = (await response.json()) as PagedQueryResult<{
+      timestamp: number;
+      nominalApr: number;
+      netApr: number;
+    }>;
+    return payload.data.map((t) => {
+      return {
+        nominalApr: t.nominalApr,
+        netApr: t.netApr,
+        timestamp: t.timestamp,
+      } as FeeAprInfo;
+    });
+  },
+});
+
 
 const graphQlClient = new GraphQLClient(config.graphAnalytics);
 
