@@ -166,10 +166,10 @@ const TableLLPHistory: React.FC<{
                 <CurrencyView value={row?.totalChange} />
               </td>
               <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
-                <CurrencyView value={row?.nominalApr} percentage={true} />
+                <PercentView value={row?.nominalApr} />
               </td>
               <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
-                <CurrencyView value={row?.netApr} percentage={true} />
+                <PercentView value={row?.netApr} />
               </td>
             </tr>
           ))}
@@ -257,7 +257,7 @@ const TableLLPHistory: React.FC<{
                   Nominal APR <Tooltip content={'Nominal APR Daily = Fee Received / LLP Value * 100'} />
                 </div>
                 <div>
-                  <CurrencyView value={row?.nominalApr} percentage={true} />
+                  <PercentView value={row?.nominalApr} />
                 </div>
               </div>
               <div className="py-5px flex justify-between">
@@ -272,7 +272,7 @@ const TableLLPHistory: React.FC<{
                   />
                 </div>
                 <div>
-                  <CurrencyView value={row?.netApr} percentage={true} />
+                  <PercentView value={row?.netApr} />
                 </div>
               </div>
             </div>
@@ -336,32 +336,31 @@ const TableLLPHistory: React.FC<{
   );
 };
 
-const CurrencyView = ({
-  value,
-  percentage,
-  options,
-}: {
-  value: number;
-  percentage?: boolean;
-  options?: Partial<FormatOption>;
-}) => {
+const CurrencyView = ({ value, options }: { value: number; options?: Partial<FormatOption> }) => {
   return (
     <span className={value == 0 ? '' : value > 0 ? 'positive' : 'negative'}>
       {value == 0 ? '' : value > 0 ? '+' : ''}
-      {percentage
-        ? `${formatNumber(value, {
-            fractionDigits: 2,
-            keepTrailingZeros: true,
-            thousandGrouping: true,
-            ...options,
-          })}%`
-        : `${formatNumber(value, {
-            currency: 'USD',
-            fractionDigits: 2,
-            keepTrailingZeros: true,
-            thousandGrouping: true,
-            ...options,
-          })}`}
+      {formatNumber(value, {
+        currency: 'USD',
+        fractionDigits: 2,
+        keepTrailingZeros: true,
+        thousandGrouping: true,
+        ...options,
+      })}
+    </span>
+  );
+};
+
+const PercentView = ({ value, options }: { value: number; options?: Partial<FormatOption> }) => {
+  return (
+    <span className={value == 0 ? '' : value > 0 ? 'positive' : 'negative'}>
+      {value == 0 ? '' : value > 0 ? '+' : ''}
+      {`${formatNumber(value, {
+        fractionDigits: 2,
+        keepTrailingZeros: true,
+        thousandGrouping: true,
+        ...options,
+      })}%`}
     </span>
   );
 };
