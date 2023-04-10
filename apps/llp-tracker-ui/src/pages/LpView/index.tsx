@@ -138,7 +138,7 @@ const LpView: React.FC = () => {
                     <div className="relative">
                       <strong className="pb-8px block text-16px">{t.name}</strong>
                       <div className="text-14px">
-                        {isLoadingPrice || isLoadingPrice ? (
+                        {isLoadingPrice || isLoadingBalance ? (
                           <Spinner className="text-16px color-#fffd" />
                         ) : lpBalances && lpPrices ? (
                           <BigNumberValue

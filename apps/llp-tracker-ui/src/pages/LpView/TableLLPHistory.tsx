@@ -354,7 +354,7 @@ const CurrencyView = ({ value, options }: { value: number; options?: Partial<For
 const PercentView = ({ value, options }: { value: number; options?: Partial<FormatOption> }) => {
   return (
     <span className={value == 0 ? '' : value > 0 ? 'positive' : 'negative'}>
-      {value == 0 ? '' : value > 0 ? '+' : ''}
+      {value > 0 ? '+' : ''}
       {`${formatNumber(value, {
         fractionDigits: 2,
         keepTrailingZeros: true,
