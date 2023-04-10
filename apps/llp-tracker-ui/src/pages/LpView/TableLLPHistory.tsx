@@ -262,7 +262,14 @@ const TableLLPHistory: React.FC<{
               </div>
               <div className="py-5px flex justify-between">
                 <div className="flex items-center">
-                  Net APR <Tooltip content={'Net APR Daily = (Fee Received + PnL vs Trader) / LLP Value * 100'} />
+                  Net APR{' '}
+                  <Tooltip
+                    content={
+                      <div>
+                        Net APR Daily = (Fee Received + PnL vs Trader) / <br /> LLP Value * 100
+                      </div>
+                    }
+                  />
                 </div>
                 <div>
                   <CurrencyView value={row?.netApr} percentage={true} />
