@@ -81,7 +81,7 @@ const TableLLPHistory: React.FC<{
       <table className="w-100% border-collapse display-none lg-display-table">
         <thead className="color-#ADABAB text-12px">
           <tr>
-            <th className="font-400 pt-0 pb-12px px-10px text-left">Time</th>
+            <th className="font-400 pt-0 pb-12px px-10px text-left">Date</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right ">Liquidity</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right b-solid b-0 b-r-1 b-transparent">LLP Value</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right">
@@ -180,7 +180,7 @@ const TableLLPHistory: React.FC<{
           return (
             <div className="py-10px px-15px mb-10px bg-#29292C" key={i}>
               <div className="py-5px flex justify-between">
-                <div>Time</div>
+                <div>Date</div>
                 <Tooltip
                   content={`${
                     row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
