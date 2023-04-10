@@ -5,7 +5,7 @@ import { LLPAndBTCPrice } from './LLPAndBTCPrice';
 import LLPValueChange from './LLPValueChange';
 import { useQuery } from '@tanstack/react-query';
 import { queryUserLpBalances, QUERY_LLP_PRICE } from '../../utils/queries';
-import { endOfDay, startOfDay, sub } from 'date-fns';
+import { sub } from 'date-fns';
 import TopBar from '../../components/TopBar';
 import { BigNumberValue } from '../../components/BigNumberValue';
 import { VALUE_DECIMALS } from '../../utils/constant';
@@ -85,8 +85,8 @@ const LpView: React.FC = () => {
       if (!ev) {
         return;
       }
-      searchParams.set('start', getUnixTime(startOfDay(ev[0])).toString());
-      searchParams.set('end', getUnixTime(endOfDay(ev[1])).toString());
+      searchParams.set('start', getUnixTime(ev[0]).toString());
+      searchParams.set('end', getUnixTime(ev[1]).toString());
       setSearchParam(searchParams);
       setPage(1);
     },

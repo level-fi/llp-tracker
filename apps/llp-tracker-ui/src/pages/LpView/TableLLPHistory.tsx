@@ -126,7 +126,7 @@ const TableLLPHistory: React.FC<{
                     row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
                   } ${format(fromUnixTime(row?.to), 'MMM d, yyyy HH:mm O')}`}
                 >
-                  <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />
+                  {row?.isLive ? 'Current' : <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />}
                 </Tooltip>
               </td>
               <td className="text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
@@ -186,7 +186,7 @@ const TableLLPHistory: React.FC<{
                     row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
                   } ${format(fromUnixTime(row?.to), 'MMM d, yyyy HH:mm O')}`}
                 >
-                  <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />
+                  {row?.isLive ? 'Current' : <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />}
                 </Tooltip>
               </div>
               <div className="py-5px flex justify-between">

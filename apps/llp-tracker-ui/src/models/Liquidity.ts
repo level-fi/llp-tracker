@@ -5,6 +5,7 @@ export type ValueMovementModel = {
   valueChange: number;
 };
 export type LiquidityTrackingModel = {
+  isLive: boolean;
   amount: number;
   amountChange: number;
   from: number;

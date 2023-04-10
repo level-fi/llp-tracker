@@ -10,7 +10,7 @@ import {
   QueryResult,
   SyncStatus,
 } from '../models/Liquidity';
-import { getUnixTime } from 'date-fns';
+import { endOfDay, getUnixTime, startOfDay } from 'date-fns';
 import { gql, GraphQLClient } from 'graphql-request';
 
 const rpcProvider = new JsonRpcProvider(config.rpcUrl);
@@ -95,8 +95,8 @@ export const queryUserLiquidity = (lpAddress: string, user: string, start: Date,
       page: 1,
       size: 1000,
       sort: 'asc',
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
     };
 
     const res = await fetch(createUrl(`${config?.llpTrackingApi}/charts/liquidity`, params));
@@ -115,8 +115,8 @@ export const queryLiquidityTracking = (tranche: string, user: string, start: Dat
       tranche,
       page: 1,
       size: 1000,
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
     const url = createUrl(`${config?.llpTrackingApi}/charts/tracking`, params);
@@ -164,8 +164,8 @@ export const queryTimeFrames = (
       tranche,
       page,
       size: quantity,
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
       sort: 'desc',
     };
     const response = await fetch(createUrl(`${config?.llpTrackingApi}/time-frames`, params));
@@ -202,8 +202,8 @@ export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Dat
       tranche,
       page: 1,
       size: 1000,
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
     const url = createUrl(`${config?.llpTrackingApi}/charts/apr`, params);
@@ -225,7 +225,6 @@ export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Dat
     });
   },
 });
-
 
 const graphQlClient = new GraphQLClient(config.graphAnalytics);
 
@@ -273,8 +272,8 @@ export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => 
     }>(query, {
       lpToken: tranche.toLowerCase(),
       token: btc.address.toLowerCase(),
-      start: getUnixTime(start),
-      end: getUnixTime(end),
+      start: getUnixTime(startOfDay(start)),
+      end: getUnixTime(endOfDay(end)),
     });
   },
 });
