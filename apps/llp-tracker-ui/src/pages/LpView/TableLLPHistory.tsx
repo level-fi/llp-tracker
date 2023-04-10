@@ -67,7 +67,7 @@ const TableLLPHistory: React.FC<{
     return <NoData>Error occurred. Please try again.</NoData>;
   }
 
-  if (!history.data || !history.data.page.totalItems) {
+  if (!history.data || !history.data.page?.totalItems) {
     return <NoData>No records found.</NoData>;
   }
 

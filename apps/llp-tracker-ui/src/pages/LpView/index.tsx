@@ -77,8 +77,8 @@ const LpView: React.FC = () => {
   };
   const [searchParams, setSearchParam] = useSearchParams();
   const [page, setPage] = useState<number>(1);
-  const { data: lpPrices } = useQuery(QUERY_LLP_PRICE);
-  const { data: lpBalances } = useQuery(queryUserLpBalances(account));
+  const { data: lpPrices, isLoading: isLoadingPrice } = useQuery(QUERY_LLP_PRICE);
+  const { data: lpBalances, isLoading: isLoadingBalance } = useQuery(queryUserLpBalances(account));
   const isMobile = useIsMobile();
   const onSetDate = useCallback(
     (ev: [Date, Date] | null) => {
@@ -138,7 +138,9 @@ const LpView: React.FC = () => {
                     <div className="relative">
                       <strong className="pb-8px block text-16px">{t.name}</strong>
                       <div className="text-14px">
-                        {lpBalances && lpPrices ? (
+                        {isLoadingPrice || isLoadingPrice ? (
+                          <Spinner className="text-16px color-#fffd" />
+                        ) : lpBalances && lpPrices ? (
                           <BigNumberValue
                             value={lpBalances[t.address] * lpPrices[t.address]}
                             decimals={VALUE_DECIMALS}
@@ -146,7 +148,7 @@ const LpView: React.FC = () => {
                             currency="USD"
                           />
                         ) : (
-                          <Spinner className="text-16px color-#fffd" />
+                          <>-</>
                         )}
                       </div>
                     </div>
