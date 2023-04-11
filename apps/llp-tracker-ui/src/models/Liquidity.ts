@@ -5,17 +5,20 @@ export type ValueMovementModel = {
   valueChange: number;
 };
 export type LiquidityTrackingModel = {
+  isLive: boolean;
   amount: number;
   amountChange: number;
-  timestamp: number;
+  from: number;
+  to: number;
   price: number;
   tranche: string;
   valueMovement: ValueMovementModel;
   totalChange: number;
   wallet: string;
-  relativeChange: number
+  relativeChange: number;
+  nominalApr: number;
+  netApr: number;
 };
-
 export type LiquidityDataModel = {
   amount: number;
   value: number;
@@ -57,4 +60,10 @@ export type QueryResult<T> = {
 export type SyncStatus = {
   block: number;
   timestamp: number;
-}
+};
+
+export type FeeAprInfo = {
+  nominalApr: number;
+  netApr: number;
+  timestamp: number;
+};

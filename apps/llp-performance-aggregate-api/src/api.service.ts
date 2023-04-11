@@ -35,10 +35,36 @@ export class ApiService {
       }
     }
     const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
     return {
       data: result.source.map((c) => ({
         amount: c.amount,
-        timestamp: c.timestamp,
+        timestamp: Math.min(c.to, now),
         value: c.value,
       })),
       page: {
@@ -60,11 +86,38 @@ export class ApiService {
       }
     }
     const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
+
     return {
       data: result.source.map((c) => ({
         amount: c.amount,
         amountChange: c.amountChange,
-        timestamp: c.timestamp,
+        timestamp: Math.min(c.to, now),
         totalChange: c.totalChange,
         value: c.value,
         relativeChange: c.relativeChange,
@@ -74,6 +127,57 @@ export class ApiService {
           price: c.valueMovement?.price,
           valueChange: c.valueMovement?.valueChange,
         },
+      })),
+      page: {
+        totalItems: result.totalItems,
+        total: result.total,
+        current: query.page,
+        size: query.size,
+      },
+    }
+  }
+
+  async getAPRChart(query: RequestChart) {
+    const existing = await this.esService.indices.exists({
+      index: this.utilService.aggregatedDataIndex,
+    })
+    if (!existing) {
+      return {
+        data: [],
+      }
+    }
+    const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
+    return {
+      data: result.source.map((c) => ({
+        timestamp: Math.min(c.to, now),
+        nominalApr: c.nomialApr,
+        netApr: c.netApr,
       })),
       page: {
         totalItems: result.totalItems,
@@ -94,22 +198,51 @@ export class ApiService {
       }
     }
     const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
     return {
       data: result.source.map((c) => ({
-        timestamp: c.timestamp,
+        isLive: now < c.to,
+        to: Math.min(c.to, now),
+        from: c.from,
         amount: c.amount,
         amountChange: c.amountChange,
         value: c.value,
         totalChange: c.totalChange,
         price: c.price,
         relativeChange: c.relativeChange,
-        isCashOut: c.isCashOut,
         valueMovement: {
           fee: c.valueMovement?.fee,
           pnl: c.valueMovement?.pnl,
           price: c.valueMovement?.price,
           valueChange: c.valueMovement?.valueChange,
         },
+        nominalApr: c.nomialApr,
+        netApr: c.netApr,
       })),
       page: {
         totalItems: result.totalItems,
@@ -120,20 +253,21 @@ export class ApiService {
     }
   }
 
-  async queryTimeFrames(query: RequestTimeFrame) {
+  async queryTimeFrames(
+    query: RequestTimeFrame,
+    queries: QueryDslQueryContainer[] = [],
+  ) {
     const sort = query.sort
-    const queries: QueryDslQueryContainer[] = [
-      {
-        term: {
-          wallet: query.wallet.toLowerCase(),
-        },
+    queries.push({
+      term: {
+        wallet: query.wallet.toLowerCase(),
       },
-      {
-        term: {
-          tranche: query.tranche.toLowerCase(),
-        },
+    })
+    queries.push({
+      term: {
+        tranche: query.tranche.toLowerCase(),
       },
-    ]
+    })
     if (query.from || query.to) {
       const dateRange: QueryDslRangeQuery = {}
       if (query.from) {
@@ -144,7 +278,7 @@ export class ApiService {
       }
       queries.push({
         range: {
-          timestamp: dateRange,
+          to: dateRange,
         },
       })
     }
@@ -159,14 +293,14 @@ export class ApiService {
       from: query.size * (query.page - 1),
       sort: [
         {
-          timestamp: ['asc', 'desc'].includes(sort) ? sort : 'desc',
+          to: ['asc', 'desc'].includes(sort) ? sort : 'desc',
         },
       ],
     })
     const totalItems = (results.hits.total as SearchTotalHits).value
     const total = Math.ceil(totalItems / query.size)
     return {
-      source: results.hits.hits?.map((c) => c._source),
+      source: results.hits.hits?.map((c) => c._source) || [],
       totalItems,
       total,
     }
@@ -228,5 +362,29 @@ export class ApiService {
         }
       }),
     )
+  }
+
+  async getLastSyncedInfo() {
+    const exist = await this.esService.indices.exists({
+      index: this.utilService.aggregatedDataIndex,
+    })
+    if (!exist) {
+      return {
+        data: {},
+      }
+    }
+
+    const [timestamp, block] = await this.redisService.client.zrevrange(
+      this.utilService.getBlockSyncedKey(),
+      0,
+      -1,
+      'WITHSCORES',
+    )
+    return {
+      data: {
+        block: block,
+        timestamp: timestamp,
+      },
+    }
   }
 }

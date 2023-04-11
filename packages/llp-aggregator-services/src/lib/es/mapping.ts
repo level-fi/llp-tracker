@@ -9,7 +9,10 @@ export const aggregatedDataMapping: Record<string, MappingProperty> = {
     type: 'keyword',
     index: true,
   },
-  timestamp: {
+  from: {
+    type: 'date',
+  },
+  to: {
     type: 'date',
   },
   amount: {
@@ -27,10 +30,13 @@ export const aggregatedDataMapping: Record<string, MappingProperty> = {
   totalChange: {
     type: 'double',
   },
-  isCashOut: {
-    type: 'boolean',
-  },
   relativeChange: {
+    type: 'double',
+  },
+  nominalApr: {
+    type: 'double',
+  },
+  netApr: {
     type: 'double',
   },
   valueMovement: {
@@ -46,6 +52,56 @@ export const aggregatedDataMapping: Record<string, MappingProperty> = {
       },
       valueChange: {
         type: 'double',
+      },
+    },
+  },
+  histories: {
+    properties: {
+      isCron: {
+        type: 'boolean',
+      },
+      timestamp: {
+        type: 'date',
+      },
+      amount: {
+        type: 'double',
+      },
+      amountChange: {
+        type: 'double',
+      },
+      price: {
+        type: 'double',
+      },
+      value: {
+        type: 'double',
+      },
+      block: {
+        type: 'long',
+      },
+      tx: {
+        type: 'keyword',
+      },
+      isRemove: {
+        type: 'boolean',
+      },
+      totalChange: {
+        type: 'double',
+      },
+      valueMovement: {
+        properties: {
+          fee: {
+            type: 'double',
+          },
+          pnl: {
+            type: 'double',
+          },
+          price: {
+            type: 'double',
+          },
+          valueChange: {
+            type: 'double',
+          },
+        },
       },
     },
   },
@@ -72,27 +128,17 @@ export const checkPointMapping: Record<string, MappingProperty> = {
   price: {
     type: 'double',
   },
+  block: {
+    type: 'long',
+  },
   timestamp: {
     type: 'date',
   },
-  isCashOut: {
+  isRemove: {
     type: 'boolean',
   },
-  raw: {
-    properties: {
-      lpAmount: {
-        type: 'text',
-      },
-      lpAmountChange: {
-        type: 'text',
-      },
-      price: {
-        type: 'text',
-      },
-      value: {
-        type: 'text',
-      },
-    },
+  tx: {
+    type: 'keyword',
   },
 }
 
@@ -112,12 +158,5 @@ export const perSharesMapping: Record<string, MappingProperty> = {
   },
   value: {
     type: 'double',
-  },
-  raw: {
-    properties: {
-      value: {
-        type: 'text',
-      },
-    },
   },
 }

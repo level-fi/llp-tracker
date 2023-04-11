@@ -2,6 +2,7 @@ import { Call, createMulticall } from './multicall';
 import { JsonRpcProvider } from 'ethers';
 import { config } from '../config';
 import {
+  FeeAprInfo,
   LiquidityDataModel,
   LiquidityTracking,
   LiquidityTrackingModel,
@@ -9,7 +10,7 @@ import {
   QueryResult,
   SyncStatus,
 } from '../models/Liquidity';
-import { getUnixTime } from 'date-fns';
+import { endOfDay, getUnixTime, startOfDay } from 'date-fns';
 import { gql, GraphQLClient } from 'graphql-request';
 
 const rpcProvider = new JsonRpcProvider(config.rpcUrl);
@@ -94,8 +95,8 @@ export const queryUserLiquidity = (lpAddress: string, user: string, start: Date,
       page: 1,
       size: 1000,
       sort: 'asc',
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
     };
 
     const res = await fetch(createUrl(`${config?.llpTrackingApi}/charts/liquidity`, params));
@@ -114,8 +115,8 @@ export const queryLiquidityTracking = (tranche: string, user: string, start: Dat
       tranche,
       page: 1,
       size: 1000,
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
     const url = createUrl(`${config?.llpTrackingApi}/charts/tracking`, params);
@@ -163,8 +164,8 @@ export const queryTimeFrames = (
       tranche,
       page,
       size: quantity,
-      from: getUnixTime(start),
-      to: getUnixTime(end),
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
       sort: 'desc',
     };
     const response = await fetch(createUrl(`${config?.llpTrackingApi}/time-frames`, params));
@@ -190,6 +191,38 @@ export const querySyncStatus = (lpAddress: string) => ({
       throw new Error('API request failed');
     }
     return (await res.json()) as QueryResult<SyncStatus>;
+  },
+});
+
+export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Date) => ({
+  queryKey: ['fetch', 'feeAPR', tranche, user, getUnixTime(start), getUnixTime(end)],
+  queryFn: async () => {
+    const params = {
+      wallet: user,
+      tranche,
+      page: 1,
+      size: 1000,
+      from: getUnixTime(startOfDay(start)),
+      to: getUnixTime(endOfDay(end)),
+      sort: 'asc',
+    };
+    const url = createUrl(`${config?.llpTrackingApi}/charts/apr`, params);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('API fetch failed');
+    }
+    const payload = (await response.json()) as PagedQueryResult<{
+      timestamp: number;
+      nominalApr: number;
+      netApr: number;
+    }>;
+    return payload.data.map((t) => {
+      return {
+        nominalApr: t.nominalApr,
+        netApr: t.netApr,
+        timestamp: t.timestamp,
+      } as FeeAprInfo;
+    });
   },
 });
 
@@ -239,8 +272,8 @@ export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => 
     }>(query, {
       lpToken: tranche.toLowerCase(),
       token: btc.address.toLowerCase(),
-      start: getUnixTime(start),
-      end: getUnixTime(end),
+      start: getUnixTime(startOfDay(start)),
+      end: getUnixTime(endOfDay(end)),
     });
   },
 });

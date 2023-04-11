@@ -12,6 +12,8 @@ import Spinner from '../../components/Spinner';
 import Tooltip from '../../components/Tooltip';
 import { DataTableLoader } from './DataTableLoader';
 import { LiquidityTrackingModel } from '../../models/Liquidity';
+import { percentFormatter } from '../../utils/helpers';
+import { format, fromUnixTime } from 'date-fns';
 
 const genPages = (curr: number, total: number, show: number) => {
   let min: number;
@@ -65,7 +67,7 @@ const TableLLPHistory: React.FC<{
     return <NoData>Error occurred. Please try again.</NoData>;
   }
 
-  if (!history.data || !history.data.page.totalItems) {
+  if (!history.data || !history.data.page?.totalItems) {
     return <NoData>No records found.</NoData>;
   }
 
@@ -79,7 +81,7 @@ const TableLLPHistory: React.FC<{
       <table className="w-100% border-collapse display-none lg-display-table">
         <thead className="color-#ADABAB text-12px">
           <tr>
-            <th className="font-400 pt-0 pb-12px px-10px text-left">Time</th>
+            <th className="font-400 pt-0 pb-12px px-10px text-left">Date</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right ">Liquidity</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right b-solid b-0 b-r-1 b-transparent">LLP Value</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right">
@@ -103,13 +105,29 @@ const TableLLPHistory: React.FC<{
               </div>
             </th>
             <th className="font-400 pt-0 pb-12px px-10px text-right ">Total Changes</th>
+            <th className="font-400 pt-0 pb-12px px-10px text-right ">
+              <div className="flex items-center justify-end">
+                Nominal APR <Tooltip content={'Nominal APR Daily = Fee Received / LLP Value * 100'} />
+              </div>
+            </th>
+            <th className="font-400 pt-0 pb-12px px-10px text-right ">
+              <div className="flex items-center justify-end">
+                Net APR <Tooltip content={'Net APR Daily = (Fee Received + PnL vs Trader) / LLP Value * 100'} />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="bg-#29292C">
           {history.data?.data.map((row: LiquidityTrackingModel, i) => (
             <tr key={i} className="b-t-1 b-#36363D text-14px hover:bg-#36363Ddd">
               <td className="b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
-                <Timestamp value={row?.timestamp} formatter="MM/dd/y HH:mm O" />
+                <Tooltip
+                  content={`${
+                    row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
+                  } ${format(fromUnixTime(row?.to), 'MMM d, yyyy HH:mm O')}`}
+                >
+                  {row?.isLive ? 'Current' : <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />}
+                </Tooltip>
               </td>
               <td className="text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
                 {formatNumber(row.amount, { fractionDigits: 2, keepTrailingZeros: true })}
@@ -147,6 +165,12 @@ const TableLLPHistory: React.FC<{
               <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
                 <CurrencyView value={row?.totalChange} />
               </td>
+              <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
+                <PercentView value={row?.nominalApr} />
+              </td>
+              <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
+                <PercentView value={row?.netApr} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -156,8 +180,14 @@ const TableLLPHistory: React.FC<{
           return (
             <div className="py-10px px-15px mb-10px bg-#29292C" key={i}>
               <div className="py-5px flex justify-between">
-                <div>Time</div>
-                <Timestamp value={row?.timestamp} formatter="MM/dd/y HH:mm O" />
+                <div>Date</div>
+                <Tooltip
+                  content={`${
+                    row?.from > 0 ? `From ${format(fromUnixTime(row?.from), 'MMM d, yyyy HH:mm O')} to` : 'Start '
+                  } ${format(fromUnixTime(row?.to), 'MMM d, yyyy HH:mm O')}`}
+                >
+                  {row?.isLive ? 'Current' : <Timestamp value={row?.to} formatter={'MMM d, yyyy'} />}
+                </Tooltip>
               </div>
               <div className="py-5px flex justify-between">
                 <div>Liquidity</div>
@@ -222,6 +252,29 @@ const TableLLPHistory: React.FC<{
                   <CurrencyView value={row?.totalChange} />
                 </div>
               </div>
+              <div className="py-5px flex justify-between">
+                <div className="flex items-center">
+                  Nominal APR <Tooltip content={'Nominal APR Daily = Fee Received / LLP Value * 100'} />
+                </div>
+                <div>
+                  <PercentView value={row?.nominalApr} />
+                </div>
+              </div>
+              <div className="py-5px flex justify-between">
+                <div className="flex items-center">
+                  Net APR{' '}
+                  <Tooltip
+                    content={
+                      <div>
+                        Net APR Daily = (Fee Received + PnL vs Trader) / <br /> LLP Value * 100
+                      </div>
+                    }
+                  />
+                </div>
+                <div>
+                  <PercentView value={row?.netApr} />
+                </div>
+              </div>
             </div>
           );
         })}
@@ -235,7 +288,7 @@ const TableLLPHistory: React.FC<{
               setQuantity(+ev.currentTarget.value);
               onChangePage(1);
             }}
-            className="bg-#29292C p-2px border-none color-inherit outline-none"
+            className="bg-#29292C p-2px border-none color-inherit outline-none cursor-pointer"
           >
             <option value="10">10</option>
             <option value="20">20</option>
@@ -294,6 +347,20 @@ const CurrencyView = ({ value, options }: { value: number; options?: Partial<For
         thousandGrouping: true,
         ...options,
       })}
+    </span>
+  );
+};
+
+const PercentView = ({ value, options }: { value: number; options?: Partial<FormatOption> }) => {
+  return (
+    <span className={value == 0 ? '' : value > 0 ? 'positive' : 'negative'}>
+      {value > 0 ? '+' : ''}
+      {`${formatNumber(value, {
+        fractionDigits: 2,
+        keepTrailingZeros: true,
+        thousandGrouping: true,
+        ...options,
+      })}%`}
     </span>
   );
 };

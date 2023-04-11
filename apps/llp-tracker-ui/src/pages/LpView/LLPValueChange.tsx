@@ -76,7 +76,7 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
                 <XAxis dataKey="timestamp" tickFormatter={xAxisDateTimeFormatter} minTickGap={20} stroke={'#adabab'} />
                 <Tooltip content={CustomTooltip} />
                 <Legend />
-                <Line type="linear" dot={false} strokeWidth={2} stroke={'#0ECB81'} dataKey="value" name="LLP Value" />
+                <Line type="linear" dot={false} strokeWidth={2} stroke={'#FF45CA'} dataKey="value" name="LLP Value" />
               </LineChart>
             ) : (
               <NoData absolute>No data.</NoData>

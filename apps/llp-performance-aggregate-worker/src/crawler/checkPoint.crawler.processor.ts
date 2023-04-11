@@ -2,12 +2,13 @@ import { checkPointMapping } from 'llp-aggregator-services/dist/es'
 import { RedisService } from 'llp-aggregator-services/dist/queue'
 import { CheckpointCrawlerJob, CheckpointResponse, Checkpoint } from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
+import { TimeframeService } from 'llp-aggregator-services/dist/timeFrame'
 import { InjectQueue } from '@nestjs/bull'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { Queue } from 'bull'
-import { BigNumber, utils } from 'ethers'
+import { BigNumber } from 'ethers'
 import { gql, GraphQLClient } from 'graphql-request'
 import { WorkerService } from '../worker.service'
 
@@ -22,6 +23,7 @@ export class CheckpointCrawlerProcessor {
     private readonly utilService: UtilService,
     private readonly esService: ElasticsearchService,
     private readonly redisService: RedisService,
+    private readonly timeFrameService: TimeframeService,
   ) {}
 
   get graphqlEndpoint(): string {
@@ -52,40 +54,41 @@ export class CheckpointCrawlerProcessor {
     if (!existing) {
       throw `index ${this.utilService.checkPointIndex} not ready`
     }
+    const keyValueTimeFrames: { [id: string]: Checkpoint } = {}
     const operations = timeFrames.flatMap((doc) => {
+      const id = this.utilService.generateCheckpointId(doc)
+      const value: Checkpoint = {
+        wallet: doc.wallet,
+        tranche: doc.tranche,
+        lpAmount: this.utilService.parseBigNumber(
+          doc.lpAmount,
+          this.utilService.lpTokenDecimals,
+        ),
+        lpAmountChange: this.utilService.parseBigNumber(
+          doc.lpAmountChange,
+          this.utilService.lpTokenDecimals,
+        ),
+        value: this.utilService.parseBigNumber(
+          doc.value,
+          this.utilService.valueDecimals,
+        ),
+        price: this.utilService.parseBigNumber(
+          doc.price,
+          this.utilService.valueDecimals - this.utilService.lpTokenDecimals,
+        ),
+        block: doc.block,
+        timestamp: doc.timestamp,
+        isRemove: doc.isRemove,
+        tx: doc.tx,
+      }
+      keyValueTimeFrames[id] = value
       return [
         {
           create: {
-            _id: `${doc.wallet}_${utils.id(doc.id)}`,
+            _id: id,
           },
         },
-        {
-          wallet: doc.wallet,
-          tranche: doc.tranche,
-          lpAmount: this.utilService.parseBigNumber(
-            doc.lpAmount,
-            this.utilService.lpTokenDecimals,
-          ),
-          lpAmountChange: this.utilService.parseBigNumber(
-            doc.lpAmountChange,
-            this.utilService.lpTokenDecimals,
-          ),
-          value: this.utilService.parseBigNumber(
-            doc.value,
-            this.utilService.valueDecimals,
-          ),
-          price: this.utilService.parseBigNumber(
-            doc.price,
-            this.utilService.valueDecimals - this.utilService.lpTokenDecimals,
-          ),
-          timestamp: doc.timestamp,
-          raw: {
-            lpAmount: doc.lpAmount.toString(),
-            lpAmountChange: doc.lpAmountChange.toString(),
-            value: doc.value.toString(),
-          },
-          isCashOut: doc.isCashOut,
-        } as Checkpoint,
+        value,
       ]
     })
     const createResponse = await this.esService.bulk({
@@ -93,9 +96,9 @@ export class CheckpointCrawlerProcessor {
       operations: operations,
       refresh: true,
     })
-    const insertedCheckpoints = createResponse.items.filter(
-      (c) => c?.create?.status === 201,
-    )
+    const insertedCheckpoints = createResponse.items
+      .filter((c) => c?.create?.status === 201)
+      .map((c) => keyValueTimeFrames[c.create?._id])
     const [skipped, inserted] = [
       createResponse.items.filter((c) => c?.create?.status === 409).length,
       insertedCheckpoints.length,
@@ -109,10 +112,6 @@ export class CheckpointCrawlerProcessor {
     )
 
     // POST PROCESS
-    const pendingWallets = insertedCheckpoints.map((c) => {
-      const id = c.create?._id
-      return id.split('_')[0]
-    })
     await Promise.all([
       // store list address of tranche
       this.storeTrancheWallets(
@@ -122,9 +121,14 @@ export class CheckpointCrawlerProcessor {
       // store all wallet checkPoint [cron not included]
       this.storeWalletCheckpoints(job.tranche, timeFrames),
       // store list wallet for aggreated data
-      this.storePendingTrancheWallets(job.tranche, pendingWallets),
+      this.storePendingTrancheWallets(
+        job.tranche,
+        insertedCheckpoints.map((c) => c.wallet),
+      ),
       // store price histories
       this.storeLPPrice(job.tranche, timeFrames),
+      // store cummulative of value and amount
+      this.storeCummulativeChange(insertedCheckpoints),
     ])
     // register job for next fetch
     const newIndex = timeFrames[timeFrames.length - 1].index
@@ -167,15 +171,23 @@ export class CheckpointCrawlerProcessor {
           llpAmount
           llpAmountChange
           llpPrice
+          snapshotAtBlock
           snapshotAtTimestamp
           tranche
           wallet
           index
+          tx
         }
       `)
     }
     const query = gql`
       query ($tranche: String!, $take: Int!) {
+        _meta {
+          block {
+            number
+            timestamp
+          }
+        }
         ${subQueries.join(',')}
       }
     `
@@ -186,25 +198,33 @@ export class CheckpointCrawlerProcessor {
     if (!response) {
       return []
     }
+    await this.workerService.logBlockSynced(
+      response['_meta']?.block?.number,
+      response['_meta']?.block?.timestamp,
+    )
+    delete response['_meta']
+    //
     const items = Object.values(response).flat()
     return items.map((c): CheckpointResponse => {
       const amount = BigNumber.from(c.llpAmount)
       const price = BigNumber.from(c.llpPrice)
       const value = amount.mul(price)
       const amountChange = BigNumber.from(c.llpAmountChange)
-      const isCashOut = amountChange.lt(0)
+      const isRemove = amountChange.lt(0)
 
       return {
         id: c.id,
-        isCashOut: isCashOut,
+        isRemove: isRemove,
         lpAmount: amount,
         lpAmountChange: amountChange,
         value: value,
         price: price,
+        block: c.snapshotAtBlock,
         timestamp: c.snapshotAtTimestamp,
         tranche: c.tranche.toLowerCase(),
         wallet: c.wallet.toLowerCase(),
         index: c.index,
+        tx: c.tx,
       }
     })
   }
@@ -223,11 +243,15 @@ export class CheckpointCrawlerProcessor {
     tranche: string,
     checkPointResponse: CheckpointResponse[],
   ) {
-    if (!checkPointResponse.length) {
+    // exclude all non balance change checkpoint
+    const checkpoints = checkPointResponse.filter(
+      (c) => !c.lpAmountChange.eq(0),
+    )
+    if (!checkpoints.length) {
       return
     }
     return Promise.all(
-      checkPointResponse.map((c) =>
+      checkpoints.map((c) =>
         this.redisService.client.zadd(
           this.utilService.getTimestampKey(tranche, c.wallet),
           c.timestamp,
@@ -255,5 +279,33 @@ export class CheckpointCrawlerProcessor {
       this.utilService.getTranchePriceKey(tranche),
       ...checkPointResponse.flatMap((c) => [c.timestamp, c.price.toString()]),
     )
+  }
+
+  storeCummulativeChange(checkpoints: Checkpoint[]) {
+    if (!checkpoints.length) {
+      return
+    }
+    return checkpoints.map((cp) => {
+      const nextScheduled = this.timeFrameService.getNextCronCheckpoint(
+        cp.timestamp,
+      )
+      const valueKey = this.utilService.getCheckpointValueSummaryKey(
+        cp.tranche,
+        cp.wallet,
+        nextScheduled,
+      )
+      const amountKey = this.utilService.getCheckpointAmountSummaryKey(
+        cp.tranche,
+        cp.wallet,
+        nextScheduled,
+      )
+      return Promise.all([
+        this.redisService.client.incrbyfloat(
+          valueKey,
+          cp.lpAmountChange * cp.price,
+        ),
+        this.redisService.client.incrbyfloat(amountKey, cp.lpAmountChange),
+      ])
+    })
   }
 }

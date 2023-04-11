@@ -1,6 +1,10 @@
 import { aggregatedDataMapping } from 'llp-aggregator-services/dist/es'
 import { TimeframeService } from 'llp-aggregator-services/dist/timeFrame'
-import { AggreatedData, Checkpoint, TimeFrameBuildJob } from 'llp-aggregator-services/dist/type'
+import {
+  AggreatedDataHistory,
+  Checkpoint,
+  TimeFrameBuildJob,
+} from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { Injectable, Logger } from '@nestjs/common'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
@@ -40,45 +44,58 @@ export class TimeFrameBuildProcessor {
           wallet,
           points,
         )
-
-        const paired: [Checkpoint, Checkpoint][] = []
-        for (const range of checkPoints) {
-          if (!range.length) {
-            continue
-          }
-          ;[undefined, ...range].reduce((prev, cur) => {
-            paired.push([prev, cur])
-            return cur
-          })
-        }
-        if (!paired.length) {
-          this.logger.debug(
-            `[update] checkPoint data not enought for build timeFrame`,
-          )
-          return
-        }
         removeItems[wallet] = []
 
         await Promise.all(
-          paired.map(async ([cpStart, cpEnd]) => {
-            const data = await this.aggreateData(
+          checkPoints.map(async (range) => {
+            if (!range.length) {
+              return
+            }
+
+            const paired: [Checkpoint, Checkpoint][] = []
+            ;[undefined, ...range].reduce((prev, cur) => {
+              paired.push([prev, cur])
+              return cur
+            })
+
+            if (!paired.length) {
+              this.logger.debug(
+                `[update] checkPoint data not enought for build timeFrame`,
+              )
+              return
+            }
+
+            const histories: AggreatedDataHistory[] = []
+            await Promise.all(
+              paired.map(async ([cpStart, cpEnd]) => {
+                const data = await this.timeFrameService.aggreateDataHistories(
+                  tranche,
+                  cpStart,
+                  cpEnd,
+                )
+                histories.push(data)
+
+                this.logger.debug(
+                  `[update] buidled timeFrame for ${wallet} ${tranche}: ${cpStart?.timestamp} → ${cpEnd.timestamp}`,
+                )
+              }),
+            )
+
+            const aggreateData = this.timeFrameService.aggreateData(
               tranche,
               wallet,
-              cpStart,
-              cpEnd,
+              histories,
             )
-            const id = this.utilService.generateAggregatedId(data)
-            removeItems[wallet].push(id)
-            operations.push({
-              create: {
-                _id: id,
-              },
+            aggreateData.forEach((current) => {
+              const id = this.utilService.generateAggregatedId(current)
+              removeItems[wallet].push(id)
+              operations.push({
+                create: {
+                  _id: id,
+                },
+              })
+              operations.push(current)
             })
-            operations.push(data)
-
-            this.logger.debug(
-              `[update] buidled timeFrame for ${wallet} ${tranche}: ${cpStart?.timestamp} → ${cpEnd.timestamp}`,
-            )
           }),
         )
       }),
@@ -137,61 +154,5 @@ export class TimeFrameBuildProcessor {
       deleted:    ${deleteResponse.deleted}
       failed:     ${createResponse.items.length - skipped - inserted}
     `)
-  }
-
-  async aggreateData(
-    tranche: string,
-    wallet: string,
-    cpStart: Checkpoint,
-    cpEnd: Checkpoint,
-  ): Promise<AggreatedData> {
-    const perShares = cpStart
-      ? await this.timeFrameService.fetchPerShares(
-          tranche,
-          cpStart.timestamp,
-          cpEnd.timestamp,
-        )
-      : {
-          feePerShares: 0,
-          pnlPerShares: 0,
-        }
-    if (!perShares) {
-      return
-    }
-    // FOR SURE
-    const totalChange = cpStart ? cpEnd.value - cpStart.value : cpEnd.value
-    const amount = !cpStart
-      ? 0
-      : cpEnd.isCashOut
-      ? cpEnd.lpAmount + cpEnd.lpAmountChange
-      : cpEnd.lpAmount - cpEnd.lpAmountChange
-    const fee = amount * perShares.feePerShares
-    const pnl = amount * perShares.pnlPerShares
-    const valueChange = cpStart
-      ? cpEnd.lpAmountChange * cpEnd.price
-      : cpEnd.value
-    const price = totalChange - fee - pnl - valueChange
-    const relativeChange =
-      cpStart && cpStart.value ? (totalChange * 100) / cpStart.value : undefined
-
-    return {
-      isCron: !!cpEnd.isCron,
-      isCashOut: cpEnd.isCashOut,
-      amount: cpEnd.lpAmount,
-      amountChange: cpEnd.lpAmountChange,
-      timestamp: cpEnd.timestamp,
-      tranche: tranche,
-      value: cpEnd.value,
-      totalChange: totalChange,
-      price: cpEnd.price,
-      relativeChange: relativeChange,
-      valueMovement: {
-        fee: fee,
-        pnl: pnl,
-        price: price,
-        valueChange: valueChange,
-      },
-      wallet: wallet,
-    }
   }
 }

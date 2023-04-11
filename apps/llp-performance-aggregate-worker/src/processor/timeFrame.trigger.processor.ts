@@ -1,5 +1,8 @@
 import { TimeframeService } from 'llp-aggregator-services/dist/timeFrame'
-import { TimeFrameBuildJob, TimeFrameTriggerJob } from 'llp-aggregator-services/dist/type'
+import {
+  TimeFrameBuildJob,
+  TimeFrameTriggerJob,
+} from 'llp-aggregator-services/dist/type'
 import { InjectQueue } from '@nestjs/bull'
 import { Injectable, Logger } from '@nestjs/common'
 import { Queue } from 'bull'
@@ -42,7 +45,9 @@ export class TimeFrameTriggerProcessor {
         })
       }),
     )
-
+    if (!data.items.length) {
+      return
+    }
     await this.queue.add('timeFrame.build', data, {
       priority: 1,
     })
