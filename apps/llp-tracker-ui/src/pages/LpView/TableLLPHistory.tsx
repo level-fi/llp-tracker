@@ -162,7 +162,7 @@ const TableLLPHistory: React.FC<{
               <td className="text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
                 <CurrencyView value={row?.valueMovement?.price} />
               </td>
-              <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
+              <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px b-r-1`}>
                 <CurrencyView value={row?.totalChange} />
               </td>
               <td className={`text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px`}>
