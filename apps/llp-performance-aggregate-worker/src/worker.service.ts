@@ -1,11 +1,17 @@
 import { MappingProperty } from '@elastic/elasticsearch/lib/api/types'
 import { Injectable } from '@nestjs/common'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
+import { RedisService } from 'llp-aggregator-services/dist/queue'
+import { UtilService } from 'llp-aggregator-services/dist/util'
 import EventEmitter from 'events'
 
 @Injectable()
 export class WorkerService {
-  constructor(private readonly esService: ElasticsearchService) {}
+  constructor(
+    private readonly esService: ElasticsearchService,
+    private readonly utilService: UtilService,
+    private readonly redisService: RedisService,
+  ) {}
 
   onModuleInit() {
     EventEmitter.defaultMaxListeners = 100
@@ -26,5 +32,13 @@ export class WorkerService {
       })
       return existing
     }
+  }
+
+  logBlockSynced(blockNumber: number, blockTimestamp: number) {
+    return this.redisService.client.zadd(
+      this.utilService.getBlockSyncedKey(),
+      blockNumber,
+      blockTimestamp,
+    )
   }
 }

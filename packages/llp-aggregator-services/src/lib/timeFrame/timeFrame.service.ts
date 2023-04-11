@@ -1,35 +1,40 @@
-import { Checkpoint, PERSHARES_TYPE } from '../type'
-import { UtilService } from '../util'
-import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { ElasticsearchService } from '@nestjs/elasticsearch'
-import { gql, GraphQLClient } from 'graphql-request'
-import * as cronParser from 'cron-parser'
-import { RedisService } from '../queue'
-import { TrancheService } from '../tranche'
+import {
+  AggreatedData,
+  AggreatedDataHistory,
+  Checkpoint,
+  PERSHARES_TYPE,
+} from "../type";
+import { UtilService } from "../util";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { ElasticsearchService } from "@nestjs/elasticsearch";
+import { gql, GraphQLClient } from "graphql-request";
+import * as cronParser from "cron-parser";
+import { RedisService } from "../queue";
+import { TrancheService } from "../tranche";
 
 @Injectable()
 export class TimeframeService {
-  private readonly logger = new Logger(TimeframeService.name)
+  private readonly logger = new Logger(TimeframeService.name);
 
   constructor(
     private readonly utilService: UtilService,
     private readonly esService: ElasticsearchService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
-    private readonly trancheService: TrancheService,
+    private readonly trancheService: TrancheService
   ) {}
 
   get graphqlEndpoint(): string {
-    return this.config.get('endpoint.snapshot')
+    return this.config.get("endpoint.snapshot");
   }
 
   get graphqlClient(): GraphQLClient {
-    return new GraphQLClient(this.graphqlEndpoint)
+    return new GraphQLClient(this.graphqlEndpoint);
   }
 
   get expression() {
-    return this.config.get<string>('scheduler.checkPoint')
+    return this.config.get<string>("scheduler.checkPoint");
   }
 
   async syncedStats(tranche: string) {
@@ -38,9 +43,9 @@ export class TimeframeService {
         this.utilService.checkPointIndex,
         this.utilService.perSharesIndex,
       ],
-    })
+    });
     if (!checkPointExist) {
-      return
+      return;
     }
     const queries = gql`
       query ($tranche: String!) {
@@ -69,7 +74,7 @@ export class TimeframeService {
           index
         }
       }
-    `
+    `;
     const [
       checkPointCounter,
       perShareCounter,
@@ -95,32 +100,32 @@ export class TimeframeService {
         aggregations: {
           byType: {
             terms: {
-              field: 'type',
+              field: "type",
             },
           },
         },
       }),
       this.graphqlClient.request<{
-        walletTrancheHistories
-        feePerShares
-        pnlPerShares
+        walletTrancheHistories;
+        feePerShares;
+        pnlPerShares;
       }>(queries, {
         tranche: tranche,
       }),
-    ])
+    ]);
     // es stats
-    const numberOfCheckpoint = checkPointCounter.count
-    const numberOfFee: number = perShareCounter.aggregations?.['byType']?.[
-      'buckets'
-    ]?.find((c) => c.key == PERSHARES_TYPE.FEE)?.doc_count
-    const numberOfPnL: number = perShareCounter.aggregations?.['byType']?.[
-      'buckets'
-    ]?.find((c) => c.key == PERSHARES_TYPE.PNL)?.doc_count
+    const numberOfCheckpoint = checkPointCounter.count;
+    const numberOfFee: number = perShareCounter.aggregations?.["byType"]?.[
+      "buckets"
+    ]?.find((c) => c.key == PERSHARES_TYPE.FEE)?.doc_count;
+    const numberOfPnL: number = perShareCounter.aggregations?.["byType"]?.[
+      "buckets"
+    ]?.find((c) => c.key == PERSHARES_TYPE.PNL)?.doc_count;
 
     // subgraph stats
-    const graphNumberOfCheckpoint = walletTrancheHistories?.[0]?.index
-    const graphNumberOfFee = feePerShares?.[0]?.index
-    const graphNumberOfPnl = pnlPerShares?.[0]?.index
+    const graphNumberOfCheckpoint = walletTrancheHistories?.[0]?.index;
+    const graphNumberOfFee = feePerShares?.[0]?.index;
+    const graphNumberOfPnl = pnlPerShares?.[0]?.index;
 
     this.logger.debug(`[syncedStats] ${tranche} check for ready build
     subgraph stats:
@@ -131,7 +136,7 @@ export class TimeframeService {
         checkPoints:    ${numberOfCheckpoint}
         fee:            ${numberOfFee}
         pnl:            ${numberOfPnL}
-`)
+`);
 
     return {
       es: {
@@ -144,7 +149,7 @@ export class TimeframeService {
         fee: graphNumberOfFee,
         pnl: graphNumberOfPnl,
       },
-    }
+    };
   }
 
   async isReadyForAggreate(tranche: string) {
@@ -153,9 +158,9 @@ export class TimeframeService {
         this.utilService.checkPointIndex,
         this.utilService.perSharesIndex,
       ],
-    })
+    });
     if (!checkPointExist) {
-      return
+      return;
     }
     // FETCH total checkPoint
     const [checkPointCounter, { walletTrancheHistories }] = await Promise.all([
@@ -168,7 +173,7 @@ export class TimeframeService {
         },
       }),
       this.graphqlClient.request<{
-        walletTrancheHistories
+        walletTrancheHistories;
       }>(
         gql`
           query ($tranche: String!) {
@@ -185,21 +190,21 @@ export class TimeframeService {
         `,
         {
           tranche: tranche,
-        },
+        }
       ),
-    ])
-    const totalGraphCheckpoint = walletTrancheHistories?.[0]?.index
-    const totalESCheckpoint = checkPointCounter.count
+    ]);
+    const totalGraphCheckpoint = walletTrancheHistories?.[0]?.index;
+    const totalESCheckpoint = checkPointCounter.count;
     if (totalGraphCheckpoint !== totalESCheckpoint) {
-      return false
+      return false;
     }
     //
-    const lastGraphTimestamp = walletTrancheHistories?.[0]?.snapshotAtTimestamp
+    const lastGraphTimestamp = walletTrancheHistories?.[0]?.snapshotAtTimestamp;
     const [{ feePerShares, pnlPerShares }, perShareCounter] = await Promise.all(
       [
         this.graphqlClient.request<{
-          feePerShares
-          pnlPerShares
+          feePerShares;
+          pnlPerShares;
         }>(
           gql`
             query ($tranche: String!, $timestamp: Int!) {
@@ -224,7 +229,7 @@ export class TimeframeService {
           {
             tranche: tranche,
             timestamp: lastGraphTimestamp,
-          },
+          }
         ),
         this.esService.search({
           size: 0,
@@ -251,22 +256,22 @@ export class TimeframeService {
           aggregations: {
             byType: {
               terms: {
-                field: 'type',
+                field: "type",
               },
             },
           },
         }),
-      ],
-    )
-    const numberOfFee: number = perShareCounter.aggregations?.['byType']?.[
-      'buckets'
-    ]?.find((c) => c.key == PERSHARES_TYPE.FEE)?.doc_count
-    const numberOfPnL: number = perShareCounter.aggregations?.['byType']?.[
-      'buckets'
-    ]?.find((c) => c.key == PERSHARES_TYPE.PNL)?.doc_count
+      ]
+    );
+    const numberOfFee: number = perShareCounter.aggregations?.["byType"]?.[
+      "buckets"
+    ]?.find((c) => c.key == PERSHARES_TYPE.FEE)?.doc_count;
+    const numberOfPnL: number = perShareCounter.aggregations?.["byType"]?.[
+      "buckets"
+    ]?.find((c) => c.key == PERSHARES_TYPE.PNL)?.doc_count;
 
-    const graphNumberOfFee = feePerShares?.[0]?.index
-    const graphNumberOfPnl = pnlPerShares?.[0]?.index
+    const graphNumberOfFee = feePerShares?.[0]?.index;
+    const graphNumberOfPnl = pnlPerShares?.[0]?.index;
 
     this.logger.debug(`[isReadyForAggreate] ${tranche} check for ready build
     subgraph stats:
@@ -277,42 +282,92 @@ export class TimeframeService {
         checkPoints:    ${totalESCheckpoint}
         fee:            ${numberOfFee}
         pnl:            ${numberOfPnL}
-`)
+`);
 
-    return numberOfFee === graphNumberOfFee && numberOfPnL === graphNumberOfPnl
+    return numberOfFee === graphNumberOfFee && numberOfPnL === graphNumberOfPnl;
   }
 
   generateCronCheckpoints(timeseries: number[]): number[] {
     if (!timeseries.length) {
-      return []
+      return [];
     }
-    const startDate = new Date(Math.min(...timeseries) * 1000)
-    const endDate = new Date(Math.max(...timeseries) * 1000)
+    const startDate = new Date(Math.min(...timeseries) * 1000);
+    const endDate = new Date(Math.max(...timeseries) * 1000);
     const interval = cronParser.parseExpression(this.expression, {
       currentDate: startDate,
       endDate: endDate,
       iterator: true,
-    })
-    const results: number[] = []
+    });
+    const results: number[] = [];
     while (interval.hasNext()) {
-      const current = interval.next()
-      results.push(Math.floor(current.value.getTime() / 1000))
+      const current = interval.next();
+      results.push(Math.floor(current.value.getTime() / 1000));
       if (current.done) {
-        break
+        break;
       }
     }
-    return results
+    return results;
   }
 
-  async fetchPerShares(tranche: string, from: number, to: number) {
+  getNextCronCheckpoint(timestamp: number): number {
+    const startDate = new Date(timestamp * 1000);
+    const interval = cronParser.parseExpression(this.expression, {
+      currentDate: startDate,
+      iterator: true,
+    });
+    const nextCronDate = interval.next();
+    return Math.floor(nextCronDate.value.getTime() / 1000);
+  }
+
+  getPrevCronCheckpoint(timestamp: number): number {
+    const startDate = new Date(timestamp * 1000);
+    const interval = cronParser.parseExpression(this.expression, {
+      currentDate: startDate,
+      iterator: true,
+    });
+    const prevCronDate = interval.prev();
+    return Math.floor(prevCronDate.value.getTime() / 1000);
+  }
+
+  async fetchPerShares(
+    tranche: string,
+    from: number,
+    to: number,
+    noUserAction: boolean
+  ) {
+    if (noUserAction) {
+      this.logger.debug(
+        `[fetchFeePerShares][REDIS] fetch fee per shares with: tranche ${tranche}, from ${from}, to ${to}`
+      );
+      const [feePerShare, pnlPerShares] = await Promise.all([
+        this.redisService.client.get(
+          this.utilService.getTranchePerSharesSummaryKey(
+            this.utilService.getFeePerSharesLastSyncedKey(tranche),
+            to
+          )
+        ),
+        this.redisService.client.get(
+          this.utilService.getTranchePerSharesSummaryKey(
+            this.utilService.getPnLPerSharesLastSyncedKey(tranche),
+            to
+          )
+        ),
+      ]);
+      if (feePerShare && pnlPerShares) {
+        return {
+          feePerShares: parseFloat(feePerShare),
+          pnlPerShares: parseFloat(pnlPerShares),
+        };
+      }
+    }
     this.logger.debug(
-      `[fetchFeePerShares] fetch fee per shares with: tranche ${tranche}, from ${from}, to ${to}`,
-    )
+      `[fetchFeePerShares][ES] fetch fee per shares with: tranche ${tranche}, from ${from}, to ${to}`
+    );
     const existing = await this.esService.indices.exists({
       index: this.utilService.perSharesIndex,
-    })
+    });
     if (!existing) {
-      return
+      return;
     }
     const results = await this.esService.search({
       index: this.utilService.perSharesIndex,
@@ -346,7 +401,7 @@ export class TimeframeService {
           },
           aggs: {
             perShares: {
-              sum: { field: 'value' },
+              sum: { field: "value" },
             },
           },
         },
@@ -358,54 +413,54 @@ export class TimeframeService {
           },
           aggs: {
             perShares: {
-              sum: { field: 'value' },
+              sum: { field: "value" },
             },
           },
         },
       },
-    })
+    });
     return {
       feePerShares:
-        results.aggregations?.['fee']?.['perShares']?.['value'] || 0,
+        results.aggregations?.["fee"]?.["perShares"]?.["value"] || 0,
       pnlPerShares:
-        results.aggregations?.['pnl']?.['perShares']?.['value'] || 0,
-    }
+        results.aggregations?.["pnl"]?.["perShares"]?.["value"] || 0,
+    };
   }
 
   async getWalletCheckpoints(tranche: string, wallet: string) {
     const userActionPoints = await this.redisService.client.zrangebyscore(
       this.utilService.getTimestampKey(tranche, wallet),
       0,
-      '+inf',
-    )
+      "+inf"
+    );
     const parsedUserActionPoints = userActionPoints
       .map((c) => parseInt(c))
-      .filter((c) => !isNaN(c))
+      .filter((c) => !isNaN(c));
 
-    const stillHasLiquidity = await this.isWalletHasLiquidity(tranche, wallet)
+    if (!parsedUserActionPoints.length) {
+      return [];
+    }
+
+    const stillHasLiquidity = await this.isWalletHasLiquidity(tranche, wallet);
 
     const cronPoints = await this.redisService.client.zrangebyscore(
       this.utilService.getCronCheckpointKey(),
       Math.min(...parsedUserActionPoints),
-      stillHasLiquidity ? '+inf' : Math.max(...parsedUserActionPoints),
-    )
+      stillHasLiquidity ? "+inf" : Math.max(...parsedUserActionPoints)
+    );
     const parsedCronPoints = cronPoints
       .map((c) => parseInt(c))
-      .filter((c) => !isNaN(c))
+      .filter((c) => !isNaN(c));
 
-    const points =
-      parsedUserActionPoints.length <= 1
-        ? parsedUserActionPoints
-        : [...parsedCronPoints, ...parsedUserActionPoints]
-    return points
+    return [...parsedCronPoints, ...parsedUserActionPoints];
   }
 
   async isWalletHasLiquidity(tranche: string, wallet: string) {
     const exist = await this.esService.indices.exists({
       index: this.utilService.checkPointIndex,
-    })
+    });
     if (!exist) {
-      return false
+      return false;
     }
     const last = await this.esService.search<Checkpoint>({
       index: this.utilService.checkPointIndex,
@@ -427,29 +482,29 @@ export class TimeframeService {
         },
       },
       sort: {
-        timestamp: 'desc',
+        timestamp: "desc",
       },
-    })
-    return !!last.hits.hits?.[0]?._source?.lpAmount
+    });
+    return !!last.hits.hits?.[0]?._source?.lpAmount;
   }
 
   async fetchLiquidityBasedCheckpoints(
     tranche: string,
     wallet: string,
-    timestamps: number[],
+    timestamps: number[]
   ) {
     const existing = await this.esService.indices.exists({
       index: this.utilService.checkPointIndex,
-    })
+    });
     if (!existing) {
-      return []
+      return [];
     }
-    const checkPoints: Checkpoint[] = []
+    const checkPoints: Checkpoint[] = [];
     // TODO: mem issue
-    const size = 50
-    const total = timestamps.length
+    const size = 50;
+    const total = timestamps.length;
     for (let i = 0; i < total; i += size) {
-      const splicedTimestamps = timestamps.slice(i, i + size)
+      const splicedTimestamps = timestamps.slice(i, i + size);
       const items = await this.esService.search<Checkpoint>({
         index: this.utilService.checkPointIndex,
         size: size,
@@ -478,52 +533,52 @@ export class TimeframeService {
             ],
           },
         },
-      })
-      checkPoints.push(...items.hits.hits?.map((c) => c._source))
+      });
+      checkPoints.push(...items.hits.hits?.map((c) => c._source));
     }
-    return checkPoints
+    return checkPoints;
   }
 
   async fetchCheckpointsData(
     tranche: string,
     wallet: string,
-    timestamps: number[],
+    timestamps: number[]
   ) {
     // FOR SURE
-    timestamps.sort()
+    timestamps.sort();
     this.logger.debug(
-      `[fetchCheckpoints] fetch checkPoint data of tranche ${tranche} with ${wallet}`,
-    )
+      `[fetchCheckpoints] fetch checkPoint data of tranche ${tranche} with ${wallet}`
+    );
     const checkPoints = await this.fetchLiquidityBasedCheckpoints(
       tranche,
       wallet,
-      timestamps,
-    )
-    const results: Checkpoint[][] = []
+      timestamps
+    );
+    const results: Checkpoint[][] = [];
     // pointer will grow up when wallet remove all liquidity at checkPoint
-    let pointer = 0
+    let pointer = 0;
     for (const timestamp of timestamps) {
       if (!results[pointer]) {
-        results[pointer] = []
+        results[pointer] = [];
       }
 
-      const checkPoint = checkPoints.find((c) => c.timestamp === timestamp)
+      const checkPoint = checkPoints.find((c) => c.timestamp === timestamp);
       if (checkPoint) {
-        results[pointer].push(checkPoint)
+        results[pointer].push(checkPoint);
         if (!checkPoint.lpAmount) {
-          pointer++
+          pointer++;
         }
-        continue
+        continue;
       }
 
       if (!results[pointer].length) {
-        continue
+        continue;
       }
 
-      const lastAction = results[pointer][results[pointer].length - 1]
-      const price = await this.trancheService.getLPPrice(tranche, timestamp)
-      const amount = lastAction.lpAmount
-      const value = price ? price * amount : 0
+      const lastAction = results[pointer][results[pointer].length - 1];
+      const price = await this.trancheService.getLPPrice(tranche, timestamp);
+      const amount = lastAction.lpAmount;
+      const value = price ? price * amount : 0;
       const cronCheckpoint: Checkpoint = {
         isCron: true,
         lpAmount: amount,
@@ -533,11 +588,189 @@ export class TimeframeService {
         tranche: tranche,
         wallet: wallet,
         value: value,
-        raw: undefined,
-        isCashOut: false,
-      }
-      results[pointer].push(cronCheckpoint)
+        isRemove: false,
+        block: 0,
+        tx: undefined,
+      };
+      results[pointer].push(cronCheckpoint);
     }
-    return results
+    return results;
+  }
+
+  aggreateData(
+    tranche: string,
+    wallet: string,
+    histories: AggreatedDataHistory[]
+  ): AggreatedData[] {
+    if (histories.length <= 1) {
+      return [];
+    }
+
+    histories.sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+    const results: AggreatedData[] = [];
+    let data: AggreatedData = undefined;
+    let avgValue = 0;
+    for (let i = 0; i < histories.length; i++) {
+      const item = histories[i];
+      if (!data) {
+        data = {
+          wallet: wallet,
+          tranche: tranche,
+          from: item.timestamp,
+          to: item.timestamp,
+          amount: item.amount,
+          amountChange: item.amountChange,
+          price: item.price,
+          value: item.value,
+          totalChange: item.totalChange,
+          valueMovement: {
+            fee: item.valueMovement.fee,
+            pnl: item.valueMovement.pnl,
+            price: item.valueMovement.price,
+            valueChange: item.valueMovement.valueChange,
+          },
+          histories: [{ ...JSON.parse(JSON.stringify(item)) }],
+        };
+        const lastTime = results[results.length - 1]?.to;
+        if (lastTime) {
+          data.from = lastTime;
+          avgValue +=
+            (item.timestamp - data.from) *
+            (item.value - item.valueMovement.valueChange);
+        }
+      } else {
+        avgValue +=
+          (item.timestamp - data.to) *
+          (item.value - item.valueMovement.valueChange);
+        data.amountChange += item.amountChange;
+        data.totalChange += item.totalChange;
+        data.valueMovement.fee += item.valueMovement.fee;
+        data.valueMovement.pnl += item.valueMovement.pnl;
+        data.valueMovement.price += item.valueMovement.price;
+        data.valueMovement.valueChange += item.valueMovement.valueChange;
+        data.histories.push({ ...JSON.parse(JSON.stringify(item)) });
+      }
+      if ((i && item.isCron) || (results.length && !item.amount)) {
+        data.to = item.timestamp;
+        data.amount = item.amount;
+        data.price = item.price;
+        data.value = item.value;
+        data.relativeChange = data.value
+          ? (data.totalChange * 100) / data.value
+          : -100;
+
+        const avgLiq = avgValue / (data.to - data.from);
+        data.nomialApr = (data.valueMovement.fee / avgLiq) * 100;
+        data.netApr =
+          ((data.valueMovement.fee + data.valueMovement.pnl) / avgLiq) * 100;
+
+        results.push({ ...data });
+        data = undefined;
+        avgValue = 0;
+      }
+    }
+    return results;
+  }
+
+  async aggreateDataHistories(
+    tranche: string,
+    cpStart: Checkpoint,
+    cpEnd: Checkpoint
+  ): Promise<AggreatedDataHistory> {
+    const perShares = cpStart
+      ? await this.fetchPerShares(
+          tranche,
+          cpStart.timestamp,
+          cpEnd.timestamp,
+          cpStart.isCron && cpEnd.isCron
+        )
+      : {
+          feePerShares: 0,
+          pnlPerShares: 0,
+        };
+    if (!perShares) {
+      return;
+    }
+    // FOR SURE
+    const totalChange = cpStart ? cpEnd.value - cpStart.value : cpEnd.value;
+    const amount = !cpStart
+      ? 0
+      : cpEnd.isRemove
+      ? cpEnd.lpAmount - cpEnd.lpAmountChange
+      : cpEnd.lpAmount + cpEnd.lpAmountChange;
+    const fee = amount * perShares.feePerShares;
+    const pnl = amount * perShares.pnlPerShares * -1;
+    const valueChange = cpStart
+      ? cpEnd.lpAmountChange * cpEnd.price
+      : cpEnd.value;
+    const price = totalChange - fee - pnl - valueChange;
+
+    return {
+      isCron: !!cpEnd.isCron,
+      isRemove: cpEnd.isRemove,
+      amount: cpEnd.lpAmount,
+      amountChange: cpEnd.lpAmountChange,
+      block: cpEnd.block,
+      timestamp: cpEnd.timestamp,
+      value: cpEnd.value,
+      price: cpEnd.price,
+      totalChange: totalChange,
+      valueMovement: {
+        fee: fee,
+        pnl: pnl,
+        price: price,
+        valueChange: valueChange,
+      },
+      tx: cpEnd.tx,
+    };
+  }
+
+  async buildLiveCheckpoint(
+    tranche: string,
+    wallet: string,
+    last: AggreatedData
+  ) {
+    if (!last || !last.amount) {
+      return;
+    }
+    const lastHistory = last.histories[last.histories.length - 1];
+    const cpStart: Checkpoint = {
+      isCron: lastHistory.isCron,
+      wallet: wallet,
+      tranche: tranche,
+      lpAmount: lastHistory.amount,
+      lpAmountChange: lastHistory.amountChange,
+      value: lastHistory.value,
+      price: lastHistory.price,
+      block: lastHistory.block,
+      isRemove: lastHistory.isRemove,
+      timestamp: lastHistory.timestamp,
+      tx: lastHistory.tx,
+    };
+    const now = Math.floor(Date.now() / 1000);
+    const timestamp = this.getNextCronCheckpoint(now);
+    const price = await this.trancheService.getLPPrice(tranche, timestamp);
+    const cpEnd: Checkpoint = {
+      isCron: true,
+      wallet: wallet,
+      tranche: tranche,
+      lpAmount: lastHistory.amount,
+      lpAmountChange: 0,
+      value: lastHistory.amount * price,
+      price: price,
+      block: undefined,
+      isRemove: false,
+      timestamp: timestamp,
+      tx: undefined,
+    };
+    const newHistoryItem = await this.aggreateDataHistories(
+      tranche,
+      cpStart,
+      cpEnd
+    );
+    const histories = lastHistory.isCron
+      ? [lastHistory, newHistoryItem]
+      : [...last.histories, newHistoryItem];
+    return this.aggreateData(tranche, wallet, histories);
   }
 }

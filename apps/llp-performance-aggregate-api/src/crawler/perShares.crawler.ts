@@ -1,4 +1,3 @@
-import { RedisService } from 'llp-aggregator-services/dist/queue'
 import { PerSharesCrawlerJob, PERSHARES_TYPE } from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { InjectQueue } from '@nestjs/bull'

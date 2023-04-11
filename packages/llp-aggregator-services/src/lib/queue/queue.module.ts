@@ -1,3 +1,4 @@
+import { UtilModule, UtilService } from '../util'
 import { BullModule } from '@nestjs/bull'
 import { DynamicModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
@@ -10,8 +11,11 @@ export class QueueModule {
       imports: [
         BullModule.registerQueueAsync({
           name: name,
-          imports: [ConfigModule],
-          useFactory: (configService: ConfigService) => {
+          imports: [ConfigModule, UtilModule],
+          useFactory: (
+            configService: ConfigService,
+            utilService: UtilService,
+          ) => {
             return {
               name: name,
               redis: {
@@ -28,12 +32,10 @@ export class QueueModule {
                 removeOnFail: false,
                 delay: 1500,
               },
-              prefix: `${configService.get<string>('prefix')}_${
-                process.env.NODE_ENV
-              }_llp_performance`,
+              prefix: `${utilService.app}:${utilService.version}:${utilService.env}:queue`,
             }
           },
-          inject: [ConfigService],
+          inject: [ConfigService, UtilService],
         }),
       ],
       providers: [RedisService],

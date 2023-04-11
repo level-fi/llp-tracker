@@ -1,6 +1,6 @@
 import { IsAddress } from '../validator'
 import { Type } from 'class-transformer'
-import { IsInt, Max, Min, Validate } from 'class-validator'
+import { IsInt, IsNotEmpty, Max, Min, Validate } from 'class-validator'
 import { BigNumber } from 'ethers'
 
 export enum PERSHARES_TYPE {
@@ -10,15 +10,17 @@ export enum PERSHARES_TYPE {
 
 export interface CheckpointResponse {
   id: string
-  isCashOut: boolean
+  isRemove: boolean
   lpAmountChange: BigNumber
   lpAmount: BigNumber
   value: BigNumber
+  block: number
   timestamp: number
   wallet: string
   tranche: string
   price: BigNumber
   index: number
+  tx: string
 }
 
 export interface Checkpoint {
@@ -29,13 +31,10 @@ export interface Checkpoint {
   lpAmountChange: number
   value: number
   price: number
+  block: number
   timestamp: number
-  isCashOut: boolean
-  raw: {
-    lpAmount: string
-    lpAmountChange: string
-    value: string
-  }
+  isRemove: boolean
+  tx: string
 }
 
 export interface PerShareResponse {
@@ -52,29 +51,47 @@ export interface PerShares {
   timestamp: number
   createdDate: number
   value: number
-  raw: {
-    value: string
-  }
 }
 
-export class AggreatedData {
-  wallet: string
-  tranche: string
-  timestamp: number
+export class AggreatedDataHistory {
   isCron: boolean
+  timestamp: number
   amount: number
   amountChange: number
-  value: number
-  totalChange: number
   price: number
-  isCashOut: boolean
-  relativeChange: number
+  value: number
+  block: number
+  tx: string
+  isRemove: boolean
+  totalChange: number
   valueMovement: {
     fee: number
     pnl: number
     price: number
     valueChange: number
   }
+}
+
+export class AggreatedData {
+  wallet: string
+  tranche: string
+  from: number
+  to: number
+  amount: number
+  amountChange: number
+  price: number
+  value: number
+  totalChange: number
+  relativeChange?: number
+  nomialApr?: number
+  netApr?: number
+  valueMovement: {
+    fee: number
+    pnl: number
+    price: number
+    valueChange: number
+  }
+  histories: AggreatedDataHistory[]
 }
 
 export class RequestTimeFrame {
@@ -146,4 +163,16 @@ export interface TimeFrameNewCronCheckpointJob {
   tranche: string
   wallets: string[]
   timestamp: number
+}
+
+export class TrancheRebuildRequest {
+  @IsNotEmpty()
+  tranche: string
+}
+
+export class TrancheRebuildSingleWalletRequest {
+  @IsNotEmpty()
+  tranche: string
+  @IsNotEmpty()
+  wallet: string
 }

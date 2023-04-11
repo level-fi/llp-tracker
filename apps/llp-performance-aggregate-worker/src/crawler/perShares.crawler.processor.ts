@@ -1,6 +1,10 @@
 import { checkPointMapping } from 'llp-aggregator-services/dist/es'
 import { RedisService } from 'llp-aggregator-services/dist/queue'
-import { PerSharesCrawlerJob, PerShareResponse, PerShares } from 'llp-aggregator-services/dist/type'
+import {
+  PerSharesCrawlerJob,
+  PerShareResponse,
+  PerShares,
+} from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { InjectQueue } from '@nestjs/bull'
 import { Injectable, Logger } from '@nestjs/common'
@@ -9,6 +13,7 @@ import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { Queue } from 'bull'
 import { gql, GraphQLClient } from 'graphql-request'
 import { WorkerService } from '../worker.service'
+import { TimeframeService } from 'llp-aggregator-services/dist/timeFrame'
 
 @Injectable()
 export class PerSharesCrawlerProcessor {
@@ -21,7 +26,12 @@ export class PerSharesCrawlerProcessor {
     private readonly utilService: UtilService,
     private readonly esService: ElasticsearchService,
     private readonly redisService: RedisService,
+    private readonly timeFrameService: TimeframeService,
   ) {}
+
+  get startDate(): number {
+    return this.config.get<number>('cronStartDate')
+  }
 
   get graphqlEndpoint(): string {
     return this.config.get('endpoint.snapshot')
@@ -52,21 +62,19 @@ export class PerSharesCrawlerProcessor {
       throw `index ${this.utilService.perSharesIndex} not ready`
     }
     const operations = items.flatMap((doc) => {
+      const value = this.utilService.parseBigNumber(doc.value, job.decimals)
       return [
         {
           create: {
-            _id: `${doc.timestamp}_${doc.id}`,
+            _id: `${doc.timestamp}_${value}_${doc.id}`,
           },
         },
         {
           tranche: doc.tranche,
           timestamp: doc.timestamp,
           type: job.type,
-          value: this.utilService.parseBigNumber(doc.value, job.decimals),
+          value: value,
           createdDate: Date.now(),
-          raw: {
-            value: doc.value,
-          },
         } as PerShares,
       ]
     })
@@ -97,6 +105,27 @@ export class PerSharesCrawlerProcessor {
     if (items.length === this.maxQuery * this.pageSize) {
       await this.queue.add('crawler.perShares', job)
     }
+    //
+    await Promise.all(
+      insertedPerShares.map((c) => {
+        const id = c.create?._id
+        if (!id) {
+          return
+        }
+        const [timestamp, value] = id.split('_')
+        const nextCron = this.timeFrameService.getNextCronCheckpoint(
+          parseInt(timestamp),
+        )
+        if (nextCron <= this.startDate) {
+          return
+        }
+        const key = this.utilService.getTranchePerSharesSummaryKey(
+          job.redisKey,
+          nextCron,
+        )
+        return this.redisService.client.incrbyfloat(key, value)
+      }),
+    )
   }
 
   async fetch(
@@ -135,6 +164,12 @@ export class PerSharesCrawlerProcessor {
     }
     const queries = gql`
       query ($tranche: String!, $take: Int!) {
+        _meta {
+          block {
+            number
+            timestamp
+          }
+        }
         ${subQueries.join(',')}
       }
     `
@@ -146,6 +181,12 @@ export class PerSharesCrawlerProcessor {
     if (!response) {
       return []
     }
+    await this.workerService.logBlockSynced(
+      response['_meta']?.block?.number,
+      response['_meta']?.block?.timestamp,
+    )
+    delete response['_meta']
+    //
     const items = Object.values(response).flat()
     return items.map(
       (c): PerShareResponse => ({
