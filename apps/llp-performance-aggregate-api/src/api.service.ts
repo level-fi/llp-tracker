@@ -5,7 +5,11 @@ import {
 } from '@elastic/elasticsearch/lib/api/types'
 import { RedisService } from 'llp-aggregator-services/dist/queue'
 import { TimeframeService } from 'llp-aggregator-services/dist/timeFrame'
-import { AggreatedData, RequestChart, RequestTimeFrame } from 'llp-aggregator-services/dist/type'
+import {
+  AggreatedData,
+  RequestChart,
+  RequestTimeFrame,
+} from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { Injectable } from '@nestjs/common'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
@@ -31,10 +35,36 @@ export class ApiService {
       }
     }
     const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
     return {
       data: result.source.map((c) => ({
         amount: c.amount,
-        timestamp: c.to,
+        timestamp: Math.min(c.to, now),
         value: c.value,
       })),
       page: {
@@ -56,11 +86,38 @@ export class ApiService {
       }
     }
     const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
+
     return {
       data: result.source.map((c) => ({
         amount: c.amount,
         amountChange: c.amountChange,
-        timestamp: c.to,
+        timestamp: Math.min(c.to, now),
         totalChange: c.totalChange,
         value: c.value,
         relativeChange: c.relativeChange,
@@ -90,9 +147,35 @@ export class ApiService {
       }
     }
     const result = await this.queryTimeFrames(query)
+    const now = Math.floor(Date.now() / 1000)
+    if (
+      (!query.to || query.to >= now) &&
+      ((query.sort === 'desc' && query.page === 1) ||
+        (query.sort === 'asc' && query.page === result.total))
+    ) {
+      if (query.sort === 'desc') {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[0],
+        )
+        if (live) {
+          result.source = live.concat(result.source)
+        }
+      } else {
+        const live = await this.timeFrameService.buildLiveCheckpoint(
+          query.tranche.toLowerCase(),
+          query.wallet.toLowerCase(),
+          result.source[result.source.length - 1],
+        )
+        if (live) {
+          result.source = result.source.concat(live)
+        }
+      }
+    }
     return {
       data: result.source.map((c) => ({
-        timestamp: c.to,
+        timestamp: Math.min(c.to, now),
         nominalApr: c.nomialApr,
         netApr: c.netApr,
       })),
