@@ -1,8 +1,8 @@
-import { UtilModule, UtilService } from '../util'
-import { BullModule } from '@nestjs/bull'
-import { DynamicModule } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { RedisService } from './redis.service'
+import { UtilModule, UtilService } from "../util";
+import { BullModule } from "@nestjs/bull";
+import { DynamicModule } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { RedisService } from "./redis.service";
 
 export class QueueModule {
   static register(name?: string): DynamicModule {
@@ -14,15 +14,15 @@ export class QueueModule {
           imports: [ConfigModule, UtilModule],
           useFactory: (
             configService: ConfigService,
-            utilService: UtilService,
+            utilService: UtilService
           ) => {
             return {
               name: name,
               redis: {
-                host: configService.get<string>('redis.host'),
-                port: configService.get<number>('redis.port'),
-                username: configService.get<string>('redis.username'),
-                password: configService.get<string>('redis.password'),
+                host: configService.get<string>("redis.host"),
+                port: configService.get<number>("redis.port"),
+                username: configService.get<string>("redis.username"),
+                password: configService.get<string>("redis.password"),
                 enableReadyCheck: false,
               },
               defaultJobOptions: {
@@ -32,14 +32,16 @@ export class QueueModule {
                 removeOnFail: false,
                 delay: 1500,
               },
-              prefix: `${utilService.app}:${utilService.version}:${utilService.env}:queue`,
-            }
+              prefix: `${configService.get<string>("prefix")}_${
+                process.env.NODE_ENV
+              }_llp_performance`,
+            };
           },
           inject: [ConfigService, UtilService],
         }),
       ],
       providers: [RedisService],
       exports: [BullModule, RedisService],
-    }
+    };
   }
 }
