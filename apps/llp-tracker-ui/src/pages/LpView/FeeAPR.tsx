@@ -38,21 +38,6 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
   end,
 }) => {
   const feeAprQuery = useQuery(queryFeeAPR(lpAddress, account, start, end));
-  const chartData = useMemo(() => {
-    if (feeAprQuery.isLoading || feeAprQuery.error || !feeAprQuery.data) {
-      return;
-    }
-    const minfeeApr = Math.min(...feeAprQuery.data?.map((d) => d.nominalApr));
-    const maxfeeApr = Math.max(...feeAprQuery.data?.map((d) => d.nominalApr));
-    const minfeeAndPnlApr = Math.min(...feeAprQuery.data?.map((d) => d.netApr));
-    const maxfeeAndPnlApr = Math.max(...feeAprQuery.data?.map((d) => d.netApr));
-    return {
-      minApr: Math.min(minfeeApr, minfeeAndPnlApr),
-      maxApr: Math.max(maxfeeApr, maxfeeAndPnlApr),
-      data: feeAprQuery.data,
-    };
-  }, [feeAprQuery]);
-
   return (
     <div className="relative min-h-380px">
       <h4 className="m-0 mb-20px text-16px">Daily APR</h4>
@@ -63,9 +48,9 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
       ) : (
         <div>
           <ResponsiveContainer width="100%" height={320}>
-            {chartData?.data && chartData?.data?.length ? (
+            {feeAprQuery?.data && feeAprQuery?.data?.length ? (
               <LineChart
-                data={chartData?.data}
+                data={feeAprQuery?.data}
                 margin={{ right: 10, left: 0, top: 10 }}
                 layout={'horizontal'}
                 syncId="trackingChart"
@@ -76,7 +61,7 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
                   tickFormatter={percentFormatter}
                   width={40}
                   stroke={'#adabab'}
-                  domain={[chartData.minApr * (chartData.minApr > 0 ? 0.8 : 1.2), chartData.maxApr * 1.2]}
+                  domain={['dataMin - 0.35', 'dataMax + 0.35']}
                 />
                 <XAxis dataKey="timestamp" tickFormatter={xAxisDateTimeFormatter} minTickGap={20} stroke={'#adabab'} />
                 <Tooltip

@@ -246,7 +246,7 @@ const TableLLPHistory: React.FC<{
                   <CurrencyView value={row?.valueMovement?.price} />
                 </div>
               </div>
-              <div className="py-5px flex justify-between">
+              <div className="py-5px flex justify-between b-b-1 b-solid b-#36363D b-0">
                 <div>Total Changes</div>
                 <div>
                   <CurrencyView value={row?.totalChange} />
