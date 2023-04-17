@@ -40,7 +40,7 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
   const feeAprQuery = useQuery(queryFeeAPR(lpAddress, account, start, end));
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">Daily APR</h4>
+      <h4 className="m-0 mb-20px text-16px">Daily Return</h4>
       {feeAprQuery.isLoading ? (
         <div className="p-y-50px flex justify-center">
           <Spinner className="text-32px" />
@@ -91,7 +91,7 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
                   strokeWidth={2}
                   stroke={'#0091FF'}
                   dataKey="nominalApr"
-                  name="Nominal APR Daily"
+                  name="Nominal Return"
                 />
                 <Line
                   type="linear"
@@ -99,7 +99,7 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
                   strokeWidth={2}
                   stroke={'#FFD339'}
                   dataKey="netApr"
-                  name="Net APR Daily"
+                  name="Net Return"
                 />
               </LineChart>
             ) : (
