@@ -107,12 +107,12 @@ const TableLLPHistory: React.FC<{
             <th className="font-400 pt-0 pb-12px px-10px text-right ">Total Changes</th>
             <th className="font-400 pt-0 pb-12px px-10px text-right ">
               <div className="flex items-center justify-end">
-                Nominal APR <Tooltip content={'Nominal APR Daily = Fee Received / LLP Value * 100'} />
+                Nominal Return <Tooltip content={'Nominal Return = Fee Received / LLP Value'} />
               </div>
             </th>
             <th className="font-400 pt-0 pb-12px px-10px text-right ">
               <div className="flex items-center justify-end">
-                Net APR <Tooltip content={'Net APR Daily = (Fee Received + PnL vs Trader) / LLP Value * 100'} />
+                Net Return <Tooltip content={'Net Return = (Fee Received + PnL vs Trader) / LLP Value'} />
               </div>
             </th>
           </tr>
@@ -254,7 +254,7 @@ const TableLLPHistory: React.FC<{
               </div>
               <div className="py-5px flex justify-between">
                 <div className="flex items-center">
-                  Nominal APR <Tooltip content={'Nominal APR Daily = Fee Received / LLP Value * 100'} />
+                  Nominal Return <Tooltip content={'Nominal Return = Fee Received / LLP Value'} />
                 </div>
                 <div>
                   <PercentView value={row?.nominalApr} />
@@ -262,11 +262,11 @@ const TableLLPHistory: React.FC<{
               </div>
               <div className="py-5px flex justify-between">
                 <div className="flex items-center">
-                  Net APR{' '}
+                  Net Return{' '}
                   <Tooltip
                     content={
                       <div>
-                        Net APR Daily = (Fee Received + PnL vs Trader) / <br /> LLP Value * 100
+                        Net Return = (Fee Received + PnL vs Trader) / <br /> LLP Value
                       </div>
                     }
                   />
