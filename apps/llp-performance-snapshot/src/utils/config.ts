@@ -33,7 +33,6 @@ export const config: Config = {
     Address.fromString('0xBD8638C1fF477275E49aaAe3E4691b74AE76BeCd'), // Liquidity Router
     Address.fromString('0x70f1555889dD1bD458A430bD57D22c12C6FCF9a4'), // LockDrop Old
     Address.fromString('0xd804ea7306abe2456bdd04a31f6f6a2f55dc0d21'), // LockDrop
-    Address.fromString('0x8BFf27E9Fa1C28934554e6B5239Fb52776573619'), // Treasury
     Address.fromString('0xf37DAc12B916356c44585333F33Cd2dF366dA487'), // LlpRewardDistributor
     Address.fromString('0xB61c13458626e33ee362390e2AD2D4F15F2a2031'), // GovernanceRedemptionPoolV2
     Address.fromString('0xe5f3b669fd58AF914111759da054f3029734678C'), // Staking LGO
