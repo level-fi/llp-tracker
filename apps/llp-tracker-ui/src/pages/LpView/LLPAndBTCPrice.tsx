@@ -105,7 +105,7 @@ export const LLPAndBTCPrice: React.FC<{
                     tickFormatter={tooltipLLPPriceFormatter}
                     dataKey="llpPrice"
                     width={37}
-                    domain={['dataMin - 0.05', 'dataMax + 0.05']}
+                    domain={[(dataMin: number) => dataMin * 0.95, (dataMax: number) => dataMax * 1.05]}
                     stroke={'#adabab'}
                   />
                   <YAxis
@@ -116,6 +116,7 @@ export const LLPAndBTCPrice: React.FC<{
                     orientation="right"
                     yAxisId="right"
                     stroke={'#adabab'}
+                    domain={[(dataMin: number) => dataMin * 0.95, (dataMax: number) => dataMax * 1.05]}
                   />
                   <XAxis
                     dataKey="timestamp"
