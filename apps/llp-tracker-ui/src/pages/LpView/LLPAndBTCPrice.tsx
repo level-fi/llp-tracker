@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { NoData } from '../../components/NoData';
 import { formatNumber } from '../../utils/numbers';
 import { unixTimeToDate } from '../../utils/times';
-import { currencyFormatter } from '../../utils/helpers';
 import Spinner from '../../components/Spinner';
 import { ChartSyncData, ChartSyncActive } from '../../models/Chart';
 
@@ -13,6 +12,10 @@ type ChartInfoStat = {
   timestamp: number;
   llpPrice: number;
   btcPrice: number;
+};
+
+const currencyFormatter = (value: any) => {
+  return formatNumber(value, { currency: 'USD', compact: false, fractionDigits: 0 });
 };
 
 const tooltipValueAndAmountFormatter = (value: any, _: any, item: any): string => {
@@ -112,7 +115,7 @@ export const LLPAndBTCPrice: React.FC<{
                     dataKey="btcPrice"
                     tickCount={8}
                     tickFormatter={currencyFormatter}
-                    width={38}
+                    width={44}
                     orientation="right"
                     yAxisId="right"
                     stroke={'#adabab'}
