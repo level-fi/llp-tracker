@@ -38,13 +38,7 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
     if (liquidityTracking.isLoading || liquidityTracking.error || !liquidityTracking.data) {
       return;
     }
-    const min = Math.min(...liquidityTracking.data?.map((d) => d.value));
-    const max = Math.max(...liquidityTracking.data?.map((d) => d.value));
-    return {
-      min,
-      max,
-      data: liquidityTracking.data,
-    };
+    return liquidityTracking.data;
   }, [liquidityTracking]);
 
   return (
@@ -57,9 +51,9 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
       ) : (
         <div>
           <ResponsiveContainer width="100%" height={320}>
-            {chartData && chartData.data.length ? (
+            {chartData && chartData?.length ? (
               <LineChart
-                data={chartData.data}
+                data={chartData}
                 margin={{ right: 10, left: 0, top: 10 }}
                 layout={'horizontal'}
                 syncId="trackingChart"
@@ -69,7 +63,7 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
                 <YAxis
                   dataKey="value"
                   tickFormatter={currencyFormatter}
-                  domain={[chartData.min * 0.9, chartData.max * 1.1]}
+                  domain={[(dataMin: number) => dataMin * 0.8, (dataMax: number) => dataMax * 1.2]}
                   width={40}
                   stroke={'#adabab'}
                 />
