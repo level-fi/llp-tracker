@@ -2,12 +2,13 @@ import React, { useMemo } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatNumber } from '../../utils/numbers';
 import { useQuery } from '@tanstack/react-query';
-import { queryFeeAPR } from '../../utils/queries';
+import { queryFeeAPR, queryLiveFrame } from '../../utils/queries';
 import { NoData } from '../../components/NoData';
 import { unixTimeToDate } from '../../utils/times';
 import { percentFormatter } from '../../utils/helpers';
 import Spinner from '../../components/Spinner';
 import { ChartSyncActive, ChartSyncData } from '../../models/Chart';
+import { FeeAprInfo } from '../../models/Liquidity';
 
 const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
 
@@ -38,6 +39,21 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
   end,
 }) => {
   const feeAprQuery = useQuery(queryFeeAPR(lpAddress, account, start, end));
+  const live = useQuery(queryLiveFrame(lpAddress, account, end));
+  const chartData = useMemo(() => {
+    if (feeAprQuery.isLoading || !feeAprQuery.data) {
+      return [];
+    }
+    const data = [...feeAprQuery.data];
+    if (live.data?.data) {
+      data.push({
+        netApr: live.data.data.netApr,
+        nominalApr: live.data.data.nominalApr,
+        timestamp: live.data.data.to,
+      } as FeeAprInfo);
+    }
+    return data;
+  }, [feeAprQuery, live]);
   return (
     <div className="relative min-h-380px">
       <h4 className="m-0 mb-20px text-16px">Daily Return</h4>
@@ -48,9 +64,9 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
       ) : (
         <div>
           <ResponsiveContainer width="100%" height={320}>
-            {feeAprQuery?.data && feeAprQuery?.data?.length ? (
+            {chartData && chartData?.length ? (
               <LineChart
-                data={feeAprQuery?.data}
+                data={chartData}
                 margin={{ right: 10, left: 0, top: 10 }}
                 layout={'horizontal'}
                 syncId="trackingChart"
@@ -93,14 +109,7 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
                   dataKey="nominalApr"
                   name="Nominal Return"
                 />
-                <Line
-                  type="linear"
-                  dot={false}
-                  strokeWidth={2}
-                  stroke={'#FFD339'}
-                  dataKey="netApr"
-                  name="Net Return"
-                />
+                <Line type="linear" dot={false} strokeWidth={2} stroke={'#FFD339'} dataKey="netApr" name="Net Return" />
               </LineChart>
             ) : (
               <NoData absolute>No data.</NoData>

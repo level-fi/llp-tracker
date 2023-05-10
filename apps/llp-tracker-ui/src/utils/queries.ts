@@ -178,6 +178,27 @@ export const queryTimeFrames = (
   enable: !!page && !!quantity && !!user && !!tranche,
 });
 
+export const queryLiveFrame = (tranche: string, user: string, end: Date) => {
+  const now = new Date();
+  const enable =
+    end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth() && end.getDate() === now.getDate();
+  return {
+    queryKey: ['fetch', 'liveFrame', tranche, user, enable],
+    queryFn: async () => {
+      const params = {
+        wallet: user,
+        tranche,
+      };
+      const response = await fetch(createUrl(`${config?.llpTrackingApi}/time-frames/live`, params));
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      return (await response.json()) as QueryResult<LiquidityTrackingModel>;
+    },
+    enable: !!user && !!tranche && enable,
+  };
+};
+
 export const querySyncStatus = (lpAddress: string) => ({
   queryKey: ['fetch', 'status', lpAddress],
   enable: !!lpAddress,

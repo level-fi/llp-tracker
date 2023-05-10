@@ -18,6 +18,7 @@ export type LiquidityTrackingModel = {
   relativeChange: number;
   nominalApr: number;
   netApr: number;
+  value: number;
 };
 export type LiquidityDataModel = {
   amount: number;

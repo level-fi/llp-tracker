@@ -4,7 +4,7 @@ import { config, getTrancheBySlug } from '../../config';
 import { LLPAndBTCPrice } from './LLPAndBTCPrice';
 import LLPValueChange from './LLPValueChange';
 import { useQuery } from '@tanstack/react-query';
-import { queryUserLpBalances, QUERY_LLP_PRICE } from '../../utils/queries';
+import { queryUserLpBalances, QUERY_LLP_PRICE, queryLiveFrame } from '../../utils/queries';
 import { sub } from 'date-fns';
 import TopBar from '../../components/TopBar';
 import { BigNumberValue } from '../../components/BigNumberValue';
@@ -23,6 +23,7 @@ import ButtonCopy from '../../components/ButtonCopy';
 import SyncStatus from './SyncStatus';
 import { useIsMobile } from '../../utils/hooks/useWindowSize';
 import FeeAPR from './FeeAPR';
+import { formatNumber } from '../../utils/numbers';
 
 export const loader: LoaderFunction = ({ params, request }) => {
   if (!isAddress(params.address?.toLowerCase() || '')) {
@@ -77,8 +78,6 @@ const LpView: React.FC = () => {
   };
   const [searchParams, setSearchParam] = useSearchParams();
   const [page, setPage] = useState<number>(1);
-  const { data: lpPrices, isLoading: isLoadingPrice } = useQuery(QUERY_LLP_PRICE);
-  const { data: lpBalances, isLoading: isLoadingBalance } = useQuery(queryUserLpBalances(account));
   const isMobile = useIsMobile();
   const onSetDate = useCallback(
     (ev: [Date, Date] | null) => {
@@ -130,29 +129,12 @@ const LpView: React.FC = () => {
             <nav className="gap-20px flex items-center w-fit nav-tab">
               {config.tranches.map((t) => (
                 <div
-                  key={t.address}
-                  className={`tab-item cursor-pointer color-#fff ${t.slug == filter.tranche.slug ? 'tab-active' : ''}`}
-                  onClick={() => setTranche(t.slug)}
+                  key={t.id}
+                  onClick={() => {
+                    setTranche(t.slug);
+                  }}
                 >
-                  <div className="tab-item-content px-10px lg-px-16px py-10px min-h-70px">
-                    <div className="relative">
-                      <strong className="pb-8px block text-16px">{t.name}</strong>
-                      <div className="text-14px">
-                        {isLoadingPrice || isLoadingBalance ? (
-                          <Spinner className="text-16px color-#fffd" />
-                        ) : lpBalances && lpPrices ? (
-                          <BigNumberValue
-                            value={lpBalances[t.address] * lpPrices[t.address]}
-                            decimals={VALUE_DECIMALS}
-                            keepCommas
-                            currency="USD"
-                          />
-                        ) : (
-                          <>-</>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <TrancheItem account={account} active={t.slug == filter.tranche.slug} {...t} />
                 </div>
               ))}
             </nav>
@@ -206,6 +188,37 @@ const LpView: React.FC = () => {
         </>
       </div>
     </>
+  );
+};
+
+const TrancheItem: React.FC<
+  TrancheConfig & {
+    account: string;
+    active?: boolean;
+  }
+> = ({ address, slug, name, active, account }) => {
+  const live = useQuery(queryLiveFrame(address, account, new Date()));
+  return (
+    <div className={`tab-item cursor-pointer color-#fff ${active ? 'tab-active' : ''}`}>
+      <div className="tab-item-content px-10px lg-px-16px py-10px min-h-70px">
+        <div className="relative">
+          <strong className="pb-8px block text-16px">{name}</strong>
+          <div className="text-14px">
+            {live.isLoading ? (
+              <Spinner className="text-16px color-#fffd" />
+            ) : live.data?.data?.amount && live.data?.data?.price ? (
+              formatNumber(live.data.data.amount * live.data.data.price, {
+                currency: 'USD',
+                fractionDigits: 2,
+                keepTrailingZeros: true,
+              })
+            ) : (
+              '$0'
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

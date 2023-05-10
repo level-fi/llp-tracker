@@ -3,7 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { Timestamp } from '../../components/Timestamp';
 import { formatNumber } from '../../utils/numbers';
 import { useQuery } from '@tanstack/react-query';
-import { queryLiquidityTracking } from '../../utils/queries';
+import { queryLiquidityTracking, queryLiveFrame } from '../../utils/queries';
 import { NoData } from '../../components/NoData';
 import { unixTimeToDate } from '../../utils/times';
 import { currencyFormatter } from '../../utils/helpers';
@@ -12,6 +12,7 @@ import Spinner from '../../components/Spinner';
 import { ChartSyncActive, ChartSyncData } from '../../models/Chart';
 import { ReactComponent as IconDoubleChevronUp } from '../../assets/icons/ic-double-chevron-up.svg';
 import { ReactComponent as IconDoubleChevronDown } from '../../assets/icons/ic-double-chevron-down.svg';
+import { LiquidityTracking } from '../../models/Liquidity';
 
 const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
 
@@ -33,19 +34,25 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
   end,
 }) => {
   const liquidityTracking = useQuery(queryLiquidityTracking(lpAddress, account, start, end));
-
+  const live = useQuery(queryLiveFrame(lpAddress, account, end));
   const chartData = useMemo(() => {
     if (liquidityTracking.isLoading || liquidityTracking.error || !liquidityTracking.data) {
-      return;
+      return [];
     }
-    const min = Math.min(...liquidityTracking.data?.map((d) => d.value));
-    const max = Math.max(...liquidityTracking.data?.map((d) => d.value));
-    return {
-      min,
-      max,
-      data: liquidityTracking.data,
-    };
-  }, [liquidityTracking]);
+    const data = [...liquidityTracking.data]
+    if (live.data?.data) {
+      data.push({
+        value: live.data.data.value,
+        feeReturn: live.data.data.valueMovement.fee,
+        pnlReturn: live.data.data.valueMovement.pnl,
+        assetPriceChange: live.data.data.valueMovement.price,
+        liquidityChange: live.data.data.valueMovement.valueChange,
+        totalChange: live.data.data.totalChange,
+        timestamp: live.data.data.to,
+      } as LiquidityTracking)
+    }
+    return data;
+  }, [liquidityTracking, live]);
 
   return (
     <div className="relative min-h-380px">
@@ -57,9 +64,9 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
       ) : (
         <div>
           <ResponsiveContainer width="100%" height={320}>
-            {chartData && chartData.data.length ? (
+            {chartData && chartData?.length ? (
               <LineChart
-                data={chartData.data}
+                data={chartData}
                 margin={{ right: 10, left: 0, top: 10 }}
                 layout={'horizontal'}
                 syncId="trackingChart"
@@ -69,7 +76,7 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
                 <YAxis
                   dataKey="value"
                   tickFormatter={currencyFormatter}
-                  domain={[chartData.min * 0.9, chartData.max * 1.1]}
+                  domain={[(dataMin: number) => dataMin * 0.8, (dataMax: number) => dataMax * 1.2]}
                   width={40}
                   stroke={'#adabab'}
                 />
