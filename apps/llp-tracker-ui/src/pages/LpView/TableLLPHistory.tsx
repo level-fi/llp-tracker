@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Timestamp } from '../../components/Timestamp';
 import { formatNumber, FormatOption } from '../../utils/numbers';
-import { queryTimeFrames } from '../../utils/queries';
+import { queryLiveFrame, queryTimeFrames } from '../../utils/queries';
 import { ReactComponent as IconDoubleArrowRight } from '../../assets/icons/ic-double-arrow-right.svg';
 import { ReactComponent as IconDoubleArrowLeft } from '../../assets/icons/ic-double-arrow-left.svg';
 import { ReactComponent as IconDoubleChevronUp } from '../../assets/icons/ic-double-chevron-up.svg';
@@ -42,6 +42,15 @@ const TableLLPHistory: React.FC<{
 }> = ({ account, tranche, start, end, page, onChangePage }) => {
   const [quantity, setQuantity] = useState(10);
   const history = useQuery(queryTimeFrames(tranche, account, page, quantity, start, end));
+  const live = useQuery(queryLiveFrame(tranche, account, end));
+  let data = history.data?.data;
+  if (page === 1) {
+    if (data && live.data?.data) {
+      const current = live.data?.data;
+      current.isLive = true;
+      data = [current, ...data];
+    }
+  }
 
   const pages = useMemo(() => {
     if (!history.data || !history.data.page) {
@@ -67,7 +76,7 @@ const TableLLPHistory: React.FC<{
     return <NoData>Error occurred. Please try again.</NoData>;
   }
 
-  if (!history.data || !history.data.page?.totalItems) {
+  if (!history.data || (!history.data.page?.totalItems && !live.data?.data)) {
     return <NoData>No records found.</NoData>;
   }
 
@@ -118,7 +127,7 @@ const TableLLPHistory: React.FC<{
           </tr>
         </thead>
         <tbody className="bg-#29292C">
-          {history.data?.data.map((row: LiquidityTrackingModel, i) => (
+          {data?.map((row: LiquidityTrackingModel, i) => (
             <tr key={i} className="b-t-1 b-#36363D text-14px hover:bg-#36363Ddd">
               <td className="b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px">
                 <Tooltip
@@ -134,7 +143,7 @@ const TableLLPHistory: React.FC<{
               </td>
               <td className="text-right b-0 b-t-1px b-solid py-12px px-10px b-#36363D text-14px b-r-1">
                 <span className={row?.totalChange == 0 ? '' : row?.totalChange > 0 ? 'positive' : 'negative'}>
-                  {formatNumber(row.amount * row.price, {
+                  {formatNumber(row.value, {
                     currency: 'USD',
                     fractionDigits: 2,
                     keepTrailingZeros: true,
@@ -176,7 +185,7 @@ const TableLLPHistory: React.FC<{
         </tbody>
       </table>
       <div className="display-block lg-display-none">
-        {history.data?.data.map((row: LiquidityTrackingModel, i) => {
+        {data?.map((row: LiquidityTrackingModel, i) => {
           return (
             <div className="py-10px px-15px mb-10px bg-#29292C" key={i}>
               <div className="py-5px flex justify-between">
@@ -197,7 +206,7 @@ const TableLLPHistory: React.FC<{
                 <div>LLP Value</div>
                 <div>
                   <span className={row?.totalChange == 0 ? '' : row?.totalChange > 0 ? 'positive' : 'negative'}>
-                    {formatNumber(row.amount * row.price, {
+                    {formatNumber(row.value, {
                       currency: 'USD',
                       fractionDigits: 2,
                       keepTrailingZeros: true,

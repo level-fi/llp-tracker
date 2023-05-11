@@ -51,7 +51,7 @@ export const QUERY_LLP_PRICE = {
 
 export const queryUserLpBalances = (user: string | undefined | null) => ({
   queryKey: ['pool', 'userInfo', user],
-  enable: !!user,
+  enabled: !!user,
   queryFn: async () => {
     const calls = config.tranches.flatMap((tranche) => [
       {
@@ -87,7 +87,7 @@ export const createUrl = (base: string, params: Record<string, any>) => {
 
 export const queryUserLiquidity = (lpAddress: string, user: string, start: Date, end: Date) => ({
   queryKey: ['fetch', 'userLiquidity', lpAddress, user, getUnixTime(start), getUnixTime(end)],
-  enable: !!lpAddress && !!user,
+  enabled: !!lpAddress && !!user,
   queryFn: async () => {
     const params = {
       wallet: user,
@@ -175,12 +175,33 @@ export const queryTimeFrames = (
 
     return (await response.json()) as PagedQueryResult<LiquidityTrackingModel>;
   },
-  enable: !!page && !!quantity && !!user && !!tranche,
+  enabled: !!page && !!quantity && !!user && !!tranche,
 });
+
+export const queryLiveFrame = (tranche: string, user: string, end: Date) => {
+  const now = new Date();
+  const enable =
+    end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth() && end.getDate() === now.getDate();
+  return {
+    queryKey: ['fetch', 'liveFrame', tranche, user, enable],
+    queryFn: async () => {
+      const params = {
+        wallet: user,
+        tranche,
+      };
+      const response = await fetch(createUrl(`${config?.llpTrackingApi}/time-frames/live`, params));
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      return (await response.json()) as QueryResult<LiquidityTrackingModel>;
+    },
+    enabled: !!user && !!tranche && enable,
+  };
+};
 
 export const querySyncStatus = (lpAddress: string) => ({
   queryKey: ['fetch', 'status', lpAddress],
-  enable: !!lpAddress,
+  enabled: !!lpAddress,
   queryFn: async () => {
     const params = {
       tranche: lpAddress,
