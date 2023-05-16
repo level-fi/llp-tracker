@@ -86,7 +86,7 @@ export const LLPAndBTCPrice: React.FC<{
 
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">BTC Price vs LLP Price</h4>
+      <h4 className="m-0 mb-20px text-16px">LLP Price</h4>
       <div className="">
         {llpVsBtc.isLoading ? (
           <div className="p-y-50px flex justify-center">
