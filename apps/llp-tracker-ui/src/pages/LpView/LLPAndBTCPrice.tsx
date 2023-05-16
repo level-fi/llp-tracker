@@ -111,16 +111,6 @@ export const LLPAndBTCPrice: React.FC<{
                     domain={[(dataMin: number) => dataMin * 0.95, (dataMax: number) => dataMax * 1.05]}
                     stroke={'#adabab'}
                   />
-                  <YAxis
-                    dataKey="btcPrice"
-                    tickCount={8}
-                    tickFormatter={currencyFormatter}
-                    width={44}
-                    orientation="right"
-                    yAxisId="right"
-                    stroke={'#adabab'}
-                    domain={[(dataMin: number) => dataMin * 0.95, (dataMax: number) => dataMax * 1.05]}
-                  />
                   <XAxis
                     dataKey="timestamp"
                     tickFormatter={xAxisDateTimeFormatter}
@@ -157,16 +147,6 @@ export const LLPAndBTCPrice: React.FC<{
                     dataKey="llpPrice"
                     name="LLP Price"
                     hide={disabled.llpPrice}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="linear"
-                    dot={false}
-                    strokeWidth={2}
-                    stroke={'#EA7D23'}
-                    dataKey="btcPrice"
-                    hide={disabled.btcPrice}
-                    name="BTC Price"
                   />
                 </LineChart>
               </ResponsiveContainer>
