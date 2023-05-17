@@ -86,7 +86,7 @@ export const LLPAndBTCPrice: React.FC<{
 
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">BTC Price vs LLP Price</h4>
+      <h4 className="m-0 mb-20px text-16px">LLP Price</h4>
       <div className="">
         {llpVsBtc.isLoading ? (
           <div className="p-y-50px flex justify-center">
@@ -110,16 +110,6 @@ export const LLPAndBTCPrice: React.FC<{
                     width={37}
                     domain={[(dataMin: number) => dataMin * 0.95, (dataMax: number) => dataMax * 1.05]}
                     stroke={'#adabab'}
-                  />
-                  <YAxis
-                    dataKey="btcPrice"
-                    tickCount={8}
-                    tickFormatter={currencyFormatter}
-                    width={44}
-                    orientation="right"
-                    yAxisId="right"
-                    stroke={'#adabab'}
-                    domain={[(dataMin: number) => dataMin * 0.95, (dataMax: number) => dataMax * 1.05]}
                   />
                   <XAxis
                     dataKey="timestamp"
@@ -157,16 +147,6 @@ export const LLPAndBTCPrice: React.FC<{
                     dataKey="llpPrice"
                     name="LLP Price"
                     hide={disabled.llpPrice}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="linear"
-                    dot={false}
-                    strokeWidth={2}
-                    stroke={'#EA7D23'}
-                    dataKey="btcPrice"
-                    hide={disabled.btcPrice}
-                    name="BTC Price"
                   />
                 </LineChart>
               </ResponsiveContainer>
