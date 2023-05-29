@@ -99,7 +99,7 @@ export const queryUserLiquidity = (lpAddress: string, user: string, start: Date,
       to: getUnixTime(endOfDay(end)),
     };
 
-    const res = await fetch(createUrl(`${config?.llpTrackingApi}/charts/liquidity`, params));
+    const res = await fetch(createUrl(`${config?.api.tracker}/charts/liquidity`, params));
     if (!res.ok) {
       throw new Error('API request failed');
     }
@@ -119,7 +119,7 @@ export const queryLiquidityTracking = (tranche: string, user: string, start: Dat
       to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
-    const url = createUrl(`${config?.llpTrackingApi}/charts/tracking`, params);
+    const url = createUrl(`${config?.api.tracker}/charts/tracking`, params);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('API fetch failed');
@@ -135,7 +135,7 @@ export const queryLiquidityTracking = (tranche: string, user: string, start: Dat
       timestamp: number;
       value: number;
     }>;
-    return payload.data.map((t) => {
+    return payload?.data?.map((t) => {
       return {
         value: t.value,
         feeReturn: t.valueMovement.fee,
@@ -168,7 +168,7 @@ export const queryTimeFrames = (
       to: getUnixTime(endOfDay(end)),
       sort: 'desc',
     };
-    const response = await fetch(createUrl(`${config?.llpTrackingApi}/time-frames`, params));
+    const response = await fetch(createUrl(`${config?.api.tracker}/time-frames`, params));
     if (!response.ok) {
       throw new Error('API request failed');
     }
@@ -189,7 +189,7 @@ export const queryLiveFrame = (tranche: string, user: string, end: Date) => {
         wallet: user,
         tranche,
       };
-      const response = await fetch(createUrl(`${config?.llpTrackingApi}/time-frames/live`, params));
+      const response = await fetch(createUrl(`${config?.api.tracker}/time-frames/live`, params));
       if (!response.ok) {
         throw new Error('API request failed');
       }
@@ -207,7 +207,7 @@ export const querySyncStatus = (lpAddress: string) => ({
       tranche: lpAddress,
     };
 
-    const res = await fetch(createUrl(`${config?.llpTrackingApi}/status`, params));
+    const res = await fetch(createUrl(`${config?.api.tracker}/status`, params));
     if (!res.ok) {
       throw new Error('API request failed');
     }
@@ -227,7 +227,7 @@ export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Dat
       to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
-    const url = createUrl(`${config?.llpTrackingApi}/charts/apr`, params);
+    const url = createUrl(`${config?.api.tracker}/charts/apr`, params);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('API fetch failed');
@@ -247,7 +247,7 @@ export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Dat
   },
 });
 
-const graphQlClient = new GraphQLClient(config.graphAnalytics);
+const graphQlClient = new GraphQLClient(config.graph.analytics);
 
 export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => ({
   queryKey: ['graph', 'llpVsBtc', tranche, getUnixTime(start), getUnixTime(end)],
@@ -263,6 +263,7 @@ export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => 
         ) {
           timestamp
           llpPrice
+          llpSupply
           tranche
         }
         priceStats(
@@ -296,5 +297,74 @@ export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => 
       start: getUnixTime(startOfDay(start)),
       end: getUnixTime(endOfDay(end)),
     });
+  },
+});
+
+export const queryLvlPrices = () => ({
+  queryKey: ['fetch', 'lvlPrices'],
+  queryFn: async () => {
+    const response = await fetch(`${config?.api.live}/lvl-prices`);
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
+    return await response.json();
+  },
+});
+
+const levelMasterGraphQlClient = new GraphQLClient(config.graph.levelMaster);
+export const queryLevelMasterRewardHistory = () => ({
+  queryKey: ['graph', 'levelMasterReward'],
+  queryFn: async () => {
+    const query = gql`
+      query rewardPerSecondHistoriesQuery {
+        levelMasterRewardHistories(where: { rewardPerSecond_gt: "0" }, orderBy: timestamp, orderDirection: desc) {
+          id
+          masterChef
+          rewardPerSecond
+          timestamp
+        }
+        levelMasterPoolInfoDailies(orderBy: timestamp, orderDirection: desc) {
+          id
+          masterChef
+          timestamp
+          totalAllocPoint
+          allocPoints
+        }
+      }
+    `;
+    const payload = await levelMasterGraphQlClient.request<{
+      levelMasterRewardHistories: {
+        id: string;
+        masterChef: string;
+        rewardPerSecond: bigint;
+        timestamp: number;
+      }[];
+      levelMasterPoolInfoDailies: {
+        id: string;
+        masterChef: string;
+        timestamp: number;
+        totalAllocPoint: bigint;
+        allocPoints: bigint[];
+      }[];
+    }>(query);
+    return {
+      levelMasterPoolInfoDailies: payload.levelMasterPoolInfoDailies.map((t) => {
+        return {
+          id: t.id,
+          masterChef: t.masterChef,
+          timestamp: t.timestamp as number,
+          totalAllocPoint: BigInt(t.totalAllocPoint),
+          allocPoints: t.allocPoints.map((a) => BigInt(a)),
+        };
+      }),
+      levelMasterRewardHistories: payload.levelMasterRewardHistories.map((t) => {
+        return {
+          id: t.id,
+          masterChef: t.masterChef,
+          rewardPerSecond: BigInt(t.rewardPerSecond),
+          timestamp: t.timestamp as number,
+        };
+      }),
+    };
   },
 });
