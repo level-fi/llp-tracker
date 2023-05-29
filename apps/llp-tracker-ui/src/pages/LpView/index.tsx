@@ -169,7 +169,12 @@ const LpView: React.FC = () => {
               />
             </div>
             <div className="rd-10px bg-#36363D py-17px px-20px flex-grow-1 mb-20px">
-              <LLPAndBTCPrice lpAddress={filter.tranche.address} start={filter.start} end={filter.end} />
+              <LLPAndBTCPrice
+                trancheId={filter.tranche.id}
+                lpAddress={filter.tranche.address}
+                start={filter.start}
+                end={filter.end}
+              />
             </div>
             <div className="rd-10px bg-#36363D py-17px px-20px flex-grow-1 mb-20px">
               <FeeAPR account={account} lpAddress={filter.tranche.address} start={filter.start} end={filter.end} />

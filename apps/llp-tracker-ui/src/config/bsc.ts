@@ -7,8 +7,14 @@ export const Config: ChainConfig = {
   rpcUrl: 'https://bsc-dataseed1.binance.org/',
   explorerUrl: 'https://bscscan.com',
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
-  graphAnalytics: 'https://subgraph.satsuma-prod.com/bd12c59de673/levelfinance/analytics/api',
-  llpTrackingApi: 'https://llp-api.level.finance',
+  graph: {
+    analytics: 'https://subgraph.satsuma-prod.com/bd12c59de673/levelfinance/analytics/api',
+    levelMaster: 'https://api.thegraph.com/subgraphs/name/level-fi/level-master',
+  },
+  api: {
+    tracker: 'https://llp-api.level.finance',
+    live: 'https://api.level.finance'
+  },
   pool: '0xA5aBFB56a78D2BD4689b25B8A77fd49Bb0675874',
   minichef: '0x5aE081b6647aEF897dEc738642089D4BDa93C0e7',
   tranches: [

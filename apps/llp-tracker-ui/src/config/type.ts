@@ -5,14 +5,20 @@ export type ChainConfig = {
   rpcUrl: string;
   multicall: string;
   explorerUrl: string;
-  llpTrackingApi: string;
   tranches: TrancheConfig[];
   pool: string;
   minichef: string;
   tokens: {
     [symbol: string]: TokenInfo;
   };
-  graphAnalytics: string;
+  api: {
+    tracker: string;
+    live: string;
+  }
+  graph: {
+    analytics: string,
+    levelMaster: string
+  }
 };
 
 export type SnapshotConfig = {

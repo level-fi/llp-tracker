@@ -1,21 +1,19 @@
 import React, { useMemo, useReducer } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { queryLLPAndBTCPrice } from '../../utils/queries';
+import { queryLLPAndBTCPrice, queryLevelMasterRewardHistory, queryLvlPrices } from '../../utils/queries';
 import { useQuery } from '@tanstack/react-query';
 import { NoData } from '../../components/NoData';
 import { formatNumber } from '../../utils/numbers';
 import { unixTimeToDate } from '../../utils/times';
 import Spinner from '../../components/Spinner';
 import { ChartSyncData, ChartSyncActive } from '../../models/Chart';
+import { toNumber } from 'ethers';
 
 type ChartInfoStat = {
   timestamp: number;
   llpPrice: number;
   btcPrice: number;
-};
-
-const currencyFormatter = (value: any) => {
-  return formatNumber(value, { currency: 'USD', compact: false, fractionDigits: 0 });
+  llpPriceWithLVLReward: number;
 };
 
 const tooltipValueAndAmountFormatter = (value: any, _: any, item: any): string => {
@@ -25,7 +23,7 @@ const tooltipValueAndAmountFormatter = (value: any, _: any, item: any): string =
   if ((item && item.dataKey === 'value') || (item && item.dataKey === 'totalChange')) {
     return formatNumber(value, { currency: 'USD', fractionDigits: 0 });
   }
-  if (item && item.dataKey === 'llpPrice') {
+  if (item && (item.dataKey === 'llpPrice' || item.dataKey === 'llpPriceWithLVLReward')) {
     return formatNumber(value, { currency: 'USD', fractionDigits: 3 });
   }
   return formatNumber(value, { currency: 'USD', fractionDigits: 0 });
@@ -52,30 +50,62 @@ const syncMethod = (chartData: ChartSyncData[], active: ChartSyncActive) => {
     }
   }
 };
-
 export const LLPAndBTCPrice: React.FC<{
+  trancheId: number;
   lpAddress: string;
   start: Date;
   end: Date;
   userLiquidityInTranche?: bigint;
-}> = ({ lpAddress, start, end }) => {
+}> = ({ trancheId, lpAddress, start, end }) => {
   const llpVsBtc = useQuery(queryLLPAndBTCPrice(lpAddress, start, end));
-
+  const { data: lvlPriceQuery } = useQuery(queryLvlPrices());
+  const lvlPrices = lvlPriceQuery?.map((t: any) => {
+    return {
+      price: t.price,
+      timestamp: new Date(t.timestamp),
+    };
+  });
+  const { data: histories } = useQuery(queryLevelMasterRewardHistory());
   const chartData = useMemo(() => {
     if (!llpVsBtc.data) {
       return [];
     }
-
-    const btcPrice = new Map(llpVsBtc.data.priceStats.map((t) => [t.timestamp, t]));
     return llpVsBtc.data.trancheStats?.map((p) => {
-      const btcPriceItem = btcPrice.get(p.timestamp);
+      let rewardHistoryItem;
+      if (histories?.levelMasterRewardHistories?.length && p.timestamp > 1672063288) { //26/12/2022
+        rewardHistoryItem = histories?.levelMasterRewardHistories?.find((h) => h.timestamp <= p.timestamp);
+        if (!rewardHistoryItem) {
+          rewardHistoryItem = histories?.levelMasterRewardHistories[histories?.levelMasterRewardHistories.length - 1];
+        }
+      }
+      const poolInfo = histories?.levelMasterPoolInfoDailies?.find((t) => t.timestamp <= p.timestamp);
+      const rewardPerDay =
+        rewardHistoryItem?.rewardPerSecond && poolInfo?.allocPoints?.length && poolInfo?.totalAllocPoint > 0n
+          ? (poolInfo?.allocPoints[trancheId] * rewardHistoryItem?.rewardPerSecond * 86400n) / poolInfo?.totalAllocPoint
+          : 0n;
+      let lvlPriceItem;
+      if (lvlPrices?.length) {
+        lvlPriceItem = lvlPrices?.find(
+          (l: any) =>
+            l.timestamp.getTime() >= p.timestamp * 1000 && l.timestamp.getTime() < (p.timestamp + 86400) * 1000,
+        );
+      }
+      const lvlPrice = lvlPriceItem ? BigInt((lvlPriceItem.price * 1e12).toFixed(0)) : 0n;
+      const totalSupply = p.llpSupply ? BigInt(+p.llpSupply * 1e18) : 0n;
+      const rewardPrice = lvlPrice && totalSupply ? toNumber((lvlPrice * rewardPerDay) / totalSupply) / 1e12 : 0;
       return {
         timestamp: +p.timestamp,
         llpPrice: parseFloat(p.llpPrice),
-        btcPrice: btcPriceItem ? parseFloat(btcPriceItem.value) / 1e12 : '',
+        llpPriceWithLVLReward: parseFloat(p.llpPrice) + rewardPrice,
       } as ChartInfoStat;
     });
-  }, [llpVsBtc.data]);
+  }, [
+    histories?.levelMasterPoolInfoDailies,
+    histories?.levelMasterRewardHistories,
+    llpVsBtc.data,
+    lvlPrices,
+    trancheId,
+  ]);
 
   const [disabled, setDisabled] = useReducer((a: Record<string, boolean>, b: string) => {
     return {
@@ -143,10 +173,20 @@ export const LLPAndBTCPrice: React.FC<{
                     type="linear"
                     dot={false}
                     strokeWidth={2}
-                    stroke={'#0ECB81'}
+                    stroke={'#f69b24'}
                     dataKey="llpPrice"
                     name="LLP Price"
                     hide={disabled.llpPrice}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="linear"
+                    dot={false}
+                    strokeWidth={2}
+                    stroke={'#2cb060'}
+                    dataKey="llpPriceWithLVLReward"
+                    name="LVL Price With LVL Rewards"
+                    hide={disabled.llpPriceWithLVLReward}
                   />
                 </LineChart>
               </ResponsiveContainer>
