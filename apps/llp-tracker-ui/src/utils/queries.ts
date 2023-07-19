@@ -201,7 +201,7 @@ export const queryLiveFrame = (chainId: number, tranche: string, user: string, e
   const enable =
     end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth() && end.getDate() === now.getDate();
   return {
-    queryKey: ['fetch', 'chainId', chainId, 'liveFrame', tranche, user, enable],
+    queryKey: ['fetch', 'chainId', chainId, 'liveFrame', tranche, 'user', user, enable],
     enabled: !!chainId && !!user && !!tranche && enable,
     queryFn: async () => {
       const config = getChainSpecifiedConfig(chainId);

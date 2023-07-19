@@ -11,6 +11,7 @@ import { formatUnits } from 'ethers';
 import { getChainSpecifiedConfig, getTokenConfig } from '../../config';
 import { VALUE_DECIMALS } from '../../utils/constant';
 import { getUnixTime, startOfDay } from 'date-fns';
+import { chainIcons } from '../../config/common';
 
 const tooltipValueAndAmountFormatter = (value: any, _: any, item: any): string => {
   if (item && item.dataKey === 'amount') {
@@ -112,7 +113,10 @@ export const LLPAndBTCPrice: React.FC<{
 
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">LLP Price</h4>
+      <div className="flex items-center m-0 mb-20px">
+        <h4 className="text-16px">LLP Price</h4>
+        <img src={chainIcons[chainId]} className="w-24px ml-auto" />
+      </div>
       <div className="">
         {llpVsBtc.isLoading ? (
           <div className="flex items-center justify-center min-h-280px">

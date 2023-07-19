@@ -249,21 +249,24 @@ const TrancheItem: React.FC<
   const live = useQuery(queryLiveFrame(chainId, address, account, new Date()));
   return (
     <div className={`tab-item cursor-pointer color-#fff ${active ? 'tab-active' : ''}`}>
-      <div className="tab-item-content px-10px lg-px-16px py-10px min-h-70px">
-        <div className="relative">
-          <strong className="pb-8px block text-16px">{name}</strong>
-          <div className="text-14px">
-            {live.isLoading ? (
-              <Spinner className="text-16px color-#fffd" />
-            ) : live.data?.data?.amount && live.data?.data?.price ? (
-              formatNumber(live.data.data.amount * live.data.data.price, {
-                currency: 'USD',
-                fractionDigits: 2,
-                keepTrailingZeros: true,
-              })
-            ) : (
-              '$0'
-            )}
+      <div className="tab-item-content px-10px py-10px min-h-70px">
+        <div className="flex items-start z-1">
+          <img src={chainIcons[chainId]} className="hidden lg-block mr-6px mt-3px w-16px z-1" />
+          <div className="relative">
+            <strong className="pb-8px block text-16px">{name}</strong>
+            <div className="text-14px">
+              {live.isLoading ? (
+                <Spinner className="text-16px color-#fffd" />
+              ) : live.data?.data?.amount && live.data?.data?.price ? (
+                formatNumber(live.data.data.amount * live.data.data.price, {
+                  currency: 'USD',
+                  fractionDigits: 2,
+                  keepTrailingZeros: true,
+                })
+              ) : (
+                '$0'
+              )}
+            </div>
           </div>
         </div>
       </div>

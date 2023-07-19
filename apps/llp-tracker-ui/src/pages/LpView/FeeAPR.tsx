@@ -9,6 +9,7 @@ import { percentFormatter } from '../../utils/helpers';
 import Spinner from '../../components/Spinner';
 import { ChartSyncActive, ChartSyncData } from '../../models/Chart';
 import { FeeAprInfo } from '../../models/Liquidity';
+import { chainIcons } from '../../config/common';
 
 const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
 
@@ -57,7 +58,10 @@ const FeeAPR: React.FC<{ chainId: number; account: string; lpAddress: string; st
   }, [feeAprQuery, live]);
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">Daily Return</h4>
+      <div className="flex items-center m-0 mb-20px">
+        <h4 className="text-16px">Daily Return</h4>
+        <img src={chainIcons[chainId]} className="w-24px ml-auto" />
+      </div>
       {feeAprQuery.isLoading ? (
         <div className="flex items-center justify-center min-h-280px">
           <Spinner className="text-32px" />
