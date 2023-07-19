@@ -30,7 +30,7 @@ const tooltipLLPPriceFormatter = (value: any): string => {
   return formatNumber(value, { currency: 'USD', fractionDigits: 2 });
 };
 
-const tooltipLabelFormatter = unixTimeToDate('MMMM dd yyyy HH:mm');
+const tooltipLabelFormatter = unixTimeToDate('MMMM dd yyyy');
 
 const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
 

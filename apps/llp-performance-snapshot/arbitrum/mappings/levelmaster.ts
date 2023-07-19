@@ -1,5 +1,5 @@
 import { BigInt } from '@graphprotocol/graph-ts';
-import { Deposit, Withdraw, EmergencyWithdraw } from '../generated/LevelMasterV1/LevelMaster';
+import { Deposit, Withdraw, EmergencyWithdraw } from '../generated/LevelMasterV2/LevelMaster';
 import { config } from '../utils/config';
 import { trackLp } from '../utils/helper';
 
