@@ -27,19 +27,20 @@ const syncMethod = (chartData: ChartSyncData[], active: ChartSyncActive) => {
   }
 };
 
-const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date; end: Date }> = ({
+const LLPValueChange: React.FC<{ chainId: number; account: string; lpAddress: string; start: Date; end: Date }> = ({
+  chainId,
   account,
   lpAddress,
   start,
   end,
 }) => {
-  const liquidityTracking = useQuery(queryLiquidityTracking(lpAddress, account, start, end));
-  const live = useQuery(queryLiveFrame(lpAddress, account, end));
+  const liquidityTracking = useQuery(queryLiquidityTracking(chainId, lpAddress, account, start, end));
+  const live = useQuery(queryLiveFrame(chainId, lpAddress, account, end));
   const chartData = useMemo(() => {
     if (liquidityTracking.isLoading || liquidityTracking.error || !liquidityTracking.data) {
       return [];
     }
-    const data = [...liquidityTracking.data]
+    const data = [...liquidityTracking.data];
     if (live.data?.data) {
       data.push({
         value: live.data.data.value,
@@ -49,7 +50,7 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
         liquidityChange: live.data.data.valueMovement.valueChange,
         totalChange: live.data.data.totalChange,
         timestamp: live.data.data.to,
-      } as LiquidityTracking)
+      } as LiquidityTracking);
     }
     return data;
   }, [liquidityTracking, live]);

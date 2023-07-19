@@ -1,3 +1,5 @@
+import { GraphQLClient } from 'graphql-request';
+
 export type ChainConfig = {
   chainId: number;
   chainName: string;
@@ -14,11 +16,12 @@ export type ChainConfig = {
   api: {
     tracker: string;
     live: string;
-  }
+  };
   graph: {
-    analytics: string,
-    levelMaster: string
-  }
+    analytics: string;
+    levelMaster: string;
+  };
+  rewardToken: string;
 };
 
 export type SnapshotConfig = {
@@ -50,4 +53,9 @@ export type TrancheConfig = {
   name: string;
   lp: string;
   slug: string;
+};
+
+export type GraphQL = {
+  analyticsClient: GraphQLClient;
+  levelMasterClient: GraphQLClient;
 };

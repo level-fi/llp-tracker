@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Timestamp } from '../../components/Timestamp';
 import { formatNumber, FormatOption } from '../../utils/numbers';
 import { queryLiveFrame, queryTimeFrames } from '../../utils/queries';
@@ -12,7 +12,6 @@ import Spinner from '../../components/Spinner';
 import Tooltip from '../../components/Tooltip';
 import { DataTableLoader } from './DataTableLoader';
 import { LiquidityTrackingModel } from '../../models/Liquidity';
-import { percentFormatter } from '../../utils/helpers';
 import { format, fromUnixTime } from 'date-fns';
 
 const genPages = (curr: number, total: number, show: number) => {
@@ -33,16 +32,17 @@ const genPages = (curr: number, total: number, show: number) => {
 };
 
 const TableLLPHistory: React.FC<{
+  chainId: number;
   account: string;
   tranche: string;
   start: Date;
   end: Date;
   page: number;
   onChangePage: (p: number) => void;
-}> = ({ account, tranche, start, end, page, onChangePage }) => {
+}> = ({ chainId, account, tranche, start, end, page, onChangePage }) => {
   const [quantity, setQuantity] = useState(10);
-  const history = useQuery(queryTimeFrames(tranche, account, page, quantity, start, end));
-  const live = useQuery(queryLiveFrame(tranche, account, end));
+  const history = useQuery(queryTimeFrames(chainId, tranche, account, page, quantity, start, end));
+  const live = useQuery(queryLiveFrame(chainId, tranche, account, end));
   let data = history.data?.data;
   if (page === 1) {
     if (data && live.data?.data) {

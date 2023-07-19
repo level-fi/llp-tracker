@@ -1,40 +1,40 @@
 import { ChainConfig } from './type';
 
 export const Config: ChainConfig = {
-  chainId: 56,
-  chainName: 'BNB Chain',
-  etherscanName: 'BscScan',
-  rpcUrl: 'https://bsc-dataseed1.binance.org/',
-  explorerUrl: 'https://bscscan.com',
+  chainId: 42161,
+  chainName: 'Arbitrum',
+  etherscanName: 'ArbiScan',
+  rpcUrl: 'https://arb-mainnet.g.alchemy.com/v2/nvmp23wCDNKccCUe596f3DuNtWYKHn2p',
+  explorerUrl: 'https://arbiscan.io',
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   graph: {
-    analytics: 'https://subgraph.satsuma-prod.com/bd12c59de673/levelfinance/analytics/api',
-    levelMaster: 'https://api.thegraph.com/subgraphs/name/level-fi/level-master',
+    analytics: 'https://subgraph.satsuma-prod.com/0bd684a706ac/levelfinance/analytics-arbitrum/api',
+    levelMaster: 'https://api.thegraph.com/subgraphs/name/level-fi/level-master-arb',
   },
   api: {
-    tracker: 'https://llp-api.level.finance/56',
-    live: 'https://api.level.finance'
+    tracker: 'https://llp-api.level.finance/42161',
+    live: 'https://api.level.finance',
   },
-  pool: '0xA5aBFB56a78D2BD4689b25B8A77fd49Bb0675874',
-  minichef: '0x5aE081b6647aEF897dEc738642089D4BDa93C0e7',
+  pool: '0x32B7bF19cb8b95C27E644183837813d4b595dcc6',
+  minichef: '0x0180dee5Df18eBF76642e50FaaEF426f7b2874f7',
   tranches: [
     {
       id: 0,
-      address: '0xB5C42F84Ab3f786bCA9761240546AA9cEC1f8821',
+      address: '0x5573405636F4b895E511C9C54aAfbefa0E7Ee458',
       name: 'Senior Tranche',
       lp: 'SLP',
       slug: 'senior',
     },
     {
       id: 1,
-      address: '0x4265af66537F7BE1Ca60Ca6070D97531EC571BDd',
+      address: '0xb076f79f8D1477165E2ff8fa99930381FB7d94c1',
       name: 'Mezzanine Tranche',
       lp: 'MLP',
       slug: 'mezzanine',
     },
     {
       id: 2,
-      address: '0xcC5368f152453D497061CB1fB578D2d3C54bD0A0',
+      address: '0x502697AF336F7413Bb4706262e7C506Edab4f3B9',
       name: 'Junior Tranche',
       lp: 'JLP',
       slug: 'junior',
@@ -42,7 +42,7 @@ export const Config: ChainConfig = {
   ],
   tokens: {
     SLP: {
-      address: '0xB5C42F84Ab3f786bCA9761240546AA9cEC1f8821',
+      address: '0x5573405636F4b895E511C9C54aAfbefa0E7Ee458',
       decimals: 18,
       fractionDigits: 2,
       priceFractionDigits: 3,
@@ -53,7 +53,7 @@ export const Config: ChainConfig = {
       logo: 'https://raw.githubusercontent.com/level-fi/assets/main/LLP-256.png',
     },
     MLP: {
-      address: '0x4265af66537F7BE1Ca60Ca6070D97531EC571BDd',
+      address: '0xb076f79f8D1477165E2ff8fa99930381FB7d94c1',
       decimals: 18,
       fractionDigits: 2,
       priceFractionDigits: 3,
@@ -64,7 +64,7 @@ export const Config: ChainConfig = {
       logo: 'https://raw.githubusercontent.com/level-fi/assets/main/LLP-256.png',
     },
     JLP: {
-      address: '0xcC5368f152453D497061CB1fB578D2d3C54bD0A0',
+      address: '0x502697AF336F7413Bb4706262e7C506Edab4f3B9',
       decimals: 18,
       fractionDigits: 2,
       priceFractionDigits: 3,
@@ -75,8 +75,8 @@ export const Config: ChainConfig = {
       logo: 'https://raw.githubusercontent.com/level-fi/assets/main/LLP-256.png',
     },
     BTC: {
-      address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c',
-      decimals: 18,
+      address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+      decimals: 8,
       fractionDigits: 5,
       priceFractionDigits: 2,
       threshold: 0.00001,

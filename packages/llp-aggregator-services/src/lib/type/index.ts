@@ -94,6 +94,14 @@ export class AggreatedData {
   histories: AggreatedDataHistory[]
 }
 
+export class RequestLiveTimeFrame {
+  @Validate(IsAddress)
+  wallet: string
+
+  @Validate(IsAddress)
+  tranche: string
+}
+
 export class RequestTimeFrame {
   @Validate(IsAddress)
   wallet: string
@@ -119,6 +127,7 @@ export class RequestTimeFrame {
 
   @Type(() => Number)
   to?: number
+
 }
 
 export class RequestChart extends RequestTimeFrame {

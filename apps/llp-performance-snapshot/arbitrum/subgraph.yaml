@@ -1,0 +1,180 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SLP
+    network: arbitrum-one
+    source:
+      address: "0x5573405636F4b895E511C9C54aAfbefa0E7Ee458"
+      startBlock: 99334034
+      abi: LpToken
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LpToken
+          file: ./abis/LpToken.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: PoolLens
+          file: ./abis/PoolLens.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./mappings/lpToken.ts
+  - kind: ethereum
+    name: MLP
+    network: arbitrum-one
+    source:
+      address: "0xb076f79f8D1477165E2ff8fa99930381FB7d94c1"
+      startBlock: 99334070
+      abi: LpToken
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LpToken
+          file: ./abis/LpToken.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: PoolLens
+          file: ./abis/PoolLens.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./mappings/lpToken.ts
+  - kind: ethereum
+    name: JLP
+    network: arbitrum-one
+    source:
+      address: "0x502697AF336F7413Bb4706262e7C506Edab4f3B9"
+      startBlock: 99334107
+      abi: LpToken
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LpToken
+          file: ./abis/LpToken.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: PoolLens
+          file: ./abis/PoolLens.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./mappings/lpToken.ts
+  - kind: ethereum
+    name: Pool
+    network: arbitrum-one
+    source:
+      address: "0x32B7bF19cb8b95C27E644183837813d4b595dcc6"
+      startBlock: 99333260
+      abi: Pool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Tranche
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+        - name: PriceFeed
+          file: ./abis/PriceFeed.json
+        - name: PoolLens
+          file: ./abis/PoolLens.json
+      eventHandlers:
+        - event: IncreasePosition(indexed bytes32,address,address,address,uint256,uint256,uint8,uint256,uint256)
+          handler: handlePositionIncreased
+        - event: DecreasePosition(indexed bytes32,address,address,address,uint256,uint256,uint8,uint256,int256,uint256)
+          handler: handlePositionDecreased
+        - event: LiquidatePosition(indexed bytes32,address,address,address,uint8,uint256,uint256,uint256,uint256,int256,uint256)
+          handler: handlePositionLiquidated
+        - event: LiquidityAdded(indexed address,indexed address,address,uint256,uint256,uint256)
+          handler: handleLiquidityAdded
+        - event: LiquidityRemoved(indexed address,indexed address,address,uint256,uint256,uint256)
+          handler: handleLiquidityRemoved
+        - event: Swap(indexed address,address,address,uint256,uint256,uint256,uint256,uint256)
+          handler: handleSwap
+        - event: DaoFeeSet(uint256)
+          handler: handleDaoFeeSet
+        - event: TokenRiskFactorUpdated(indexed address)
+          handler: handleTokenRiskFactorUpdated
+      file: ./mappings/pool.ts
+  - kind: ethereum
+    name: Oracle
+    source:
+      abi: Oracle
+      address: "0x1E56Ab83AC0cb52713762E48915Fb368eC99BaA1"
+      startBlock: 99333018
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - PriceStat
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+        - name: PriceFeed
+          file: ./abis/PriceFeed.json
+      eventHandlers:
+        - event: PricePosted(indexed address,uint256)
+          handler: handlePricePost
+      file: ./mappings/oracle.ts
+    network: arbitrum-one
+  - kind: ethereum
+    name: LevelMasterV2
+    source:
+      abi: LevelMaster
+      address: "0x0180dee5Df18eBF76642e50FaaEF426f7b2874f7"
+      startBlock: 99351230
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./mappings/levelmaster.ts
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LevelMaster
+          file: ./abis/LevelMaster.json
+        - name: PoolLens
+          file: ./abis/PoolLens.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleDeposit
+        - event: Withdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleWithdraw
+        - event: EmergencyWithdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleEmergencyWithdraw
+    network: arbitrum-one

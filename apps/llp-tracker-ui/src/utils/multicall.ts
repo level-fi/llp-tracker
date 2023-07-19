@@ -417,3 +417,5 @@ export const multicall = async (
 
 export const createMulticall = (provider: JsonRpcApiProvider, multicallAddress: string) => (call: Call[]) =>
   multicall(provider, multicallAddress, call);
+
+export type Multicall = ReturnType<typeof createMulticall>;

@@ -3,6 +3,7 @@ import {
   RequestTimeFrame,
   TrancheRebuildSingleWalletRequest,
   TrancheRebuildRequest,
+  RequestLiveTimeFrame,
 } from 'llp-aggregator-services/dist/type'
 import { Param, UseGuards } from '@nestjs/common'
 import { Controller, Get, Query } from '@nestjs/common'
@@ -31,6 +32,11 @@ export class ApiController {
   @Get('/time-frames')
   getTimeFrames(@Query() query: RequestTimeFrame) {
     return this.service.getTimeFrames(query)
+  }
+
+  @Get('/time-frames/live')
+  getLiveTimeFrame(@Query() query: RequestLiveTimeFrame) {
+    return this.service.getLiveTimeFrame(query)
   }
 
   @Get('/rebuild/:tranche')

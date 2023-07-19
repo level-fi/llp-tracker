@@ -14,7 +14,7 @@ export class QueueModule {
           imports: [ConfigModule, UtilModule],
           useFactory: (
             configService: ConfigService,
-            utilService: UtilService
+            utilService: UtilService,
           ) => {
             return {
               name: name,
@@ -32,9 +32,7 @@ export class QueueModule {
                 removeOnFail: false,
                 delay: 1500,
               },
-              prefix: `${configService.get<string>("prefix")}_${
-                process.env.NODE_ENV
-              }_llp_performance`,
+              prefix: `${utilService.app}:${utilService.chainId}:${utilService.version}:${utilService.env}:queue`,
             };
           },
           inject: [ConfigService, UtilService],

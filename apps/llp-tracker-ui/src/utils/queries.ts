@@ -1,6 +1,5 @@
-import { Call, createMulticall } from './multicall';
-import { JsonRpcProvider } from 'ethers';
-import { config } from '../config';
+import { Call } from './multicall';
+import { getChainSpecifiedConfig } from '../config';
 import {
   FeeAprInfo,
   LiquidityDataModel,
@@ -11,15 +10,16 @@ import {
   SyncStatus,
 } from '../models/Liquidity';
 import { endOfDay, getUnixTime, startOfDay } from 'date-fns';
-import { gql, GraphQLClient } from 'graphql-request';
+import { gql } from 'graphql-request';
+import { getGraphClient, getOrCreateMulticall } from './protocol';
+import { TokenLVLSchema } from './type';
 
-const rpcProvider = new JsonRpcProvider(config.rpcUrl);
-
-const multicall = createMulticall(rpcProvider, config.multicall);
-
-export const QUERY_LLP_PRICE = {
-  queryKey: ['pool', 'lpPrice'],
+export const QUERY_LLP_PRICE = (chainId: number) => ({
+  queryKey: ['pool', 'lpPrice', 'chainId', chainId],
+  enabled: !!chainId,
   queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
+    const multicall = getOrCreateMulticall(chainId, config.multicall);
     const calls: Call[] = config.tranches.flatMap((t) => [
       {
         target: config.pool,
@@ -47,12 +47,14 @@ export const QUERY_LLP_PRICE = {
       }),
     );
   },
-};
+});
 
-export const queryUserLpBalances = (user: string | undefined | null) => ({
-  queryKey: ['pool', 'userInfo', user],
-  enabled: !!user,
+export const queryUserLpBalances = (chainId: number, user: string | undefined | null) => ({
+  queryKey: ['pool', 'chainId', chainId, 'userInfo', user],
+  enabled: !!chainId && !!user,
   queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
+    const multicall = getOrCreateMulticall(chainId, config?.multicall);
     const calls = config.tranches.flatMap((tranche) => [
       {
         target: config.minichef,
@@ -85,10 +87,11 @@ export const createUrl = (base: string, params: Record<string, any>) => {
   return url.toString();
 };
 
-export const queryUserLiquidity = (lpAddress: string, user: string, start: Date, end: Date) => ({
-  queryKey: ['fetch', 'userLiquidity', lpAddress, user, getUnixTime(start), getUnixTime(end)],
-  enabled: !!lpAddress && !!user,
+export const queryUserLiquidity = (chainId: number, lpAddress: string, user: string, start: Date, end: Date) => ({
+  queryKey: ['fetch', 'chainId', chainId, 'userLiquidity', lpAddress, user, getUnixTime(start), getUnixTime(end)],
+  enabled: !!chainId && !!lpAddress && !!user,
   queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
     const params = {
       wallet: user,
       tranche: lpAddress,
@@ -99,7 +102,7 @@ export const queryUserLiquidity = (lpAddress: string, user: string, start: Date,
       to: getUnixTime(endOfDay(end)),
     };
 
-    const res = await fetch(createUrl(`${config?.api.tracker}/charts/liquidity`, params));
+    const res = await fetch(createUrl(`${config.api.tracker}/charts/liquidity`, params));
     if (!res.ok) {
       throw new Error('API request failed');
     }
@@ -107,9 +110,11 @@ export const queryUserLiquidity = (lpAddress: string, user: string, start: Date,
   },
 });
 
-export const queryLiquidityTracking = (tranche: string, user: string, start: Date, end: Date) => ({
-  queryKey: ['fetch', 'liquidityTracking', tranche, user, getUnixTime(start), getUnixTime(end)],
+export const queryLiquidityTracking = (chainId: number, tranche: string, user: string, start: Date, end: Date) => ({
+  queryKey: ['fetch', 'chainId', chainId, 'liquidityTracking', tranche, user, getUnixTime(start), getUnixTime(end)],
+  enabled: !!chainId,
   queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
     const params = {
       wallet: user,
       tranche,
@@ -119,7 +124,7 @@ export const queryLiquidityTracking = (tranche: string, user: string, start: Dat
       to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
-    const url = createUrl(`${config?.api.tracker}/charts/tracking`, params);
+    const url = createUrl(`${config.api.tracker}/charts/tracking`, params);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('API fetch failed');
@@ -150,6 +155,7 @@ export const queryLiquidityTracking = (tranche: string, user: string, start: Dat
 });
 
 export const queryTimeFrames = (
+  chainId: number,
   tranche: string,
   user: string,
   page: number,
@@ -157,8 +163,21 @@ export const queryTimeFrames = (
   start: Date,
   end: Date,
 ) => ({
-  queryKey: ['fetch', 'timeFrames', tranche, user, page, quantity, getUnixTime(start), getUnixTime(end)],
+  queryKey: [
+    'fetch',
+    'chainId',
+    chainId,
+    'timeFrames',
+    tranche,
+    user,
+    page,
+    quantity,
+    getUnixTime(start),
+    getUnixTime(end),
+  ],
+  enabled: !!chainId && !!page && !!quantity && !!user && !!tranche,
   queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
     const params = {
       wallet: user,
       tranche,
@@ -168,46 +187,46 @@ export const queryTimeFrames = (
       to: getUnixTime(endOfDay(end)),
       sort: 'desc',
     };
-    const response = await fetch(createUrl(`${config?.api.tracker}/time-frames`, params));
+    const response = await fetch(createUrl(`${config.api.tracker}/time-frames`, params));
     if (!response.ok) {
       throw new Error('API request failed');
     }
 
     return (await response.json()) as PagedQueryResult<LiquidityTrackingModel>;
   },
-  enabled: !!page && !!quantity && !!user && !!tranche,
 });
 
-export const queryLiveFrame = (tranche: string, user: string, end: Date) => {
+export const queryLiveFrame = (chainId: number, tranche: string, user: string, end: Date) => {
   const now = new Date();
   const enable =
     end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth() && end.getDate() === now.getDate();
   return {
-    queryKey: ['fetch', 'liveFrame', tranche, user, enable],
+    queryKey: ['fetch', 'chainId', chainId, 'liveFrame', tranche, user, enable],
+    enabled: !!chainId && !!user && !!tranche && enable,
     queryFn: async () => {
+      const config = getChainSpecifiedConfig(chainId);
       const params = {
         wallet: user,
         tranche,
       };
-      const response = await fetch(createUrl(`${config?.api.tracker}/time-frames/live`, params));
+      const response = await fetch(createUrl(`${config.api.tracker}/time-frames/live`, params));
       if (!response.ok) {
         throw new Error('API request failed');
       }
       return (await response.json()) as QueryResult<LiquidityTrackingModel>;
     },
-    enabled: !!user && !!tranche && enable,
   };
 };
 
-export const querySyncStatus = (lpAddress: string) => ({
-  queryKey: ['fetch', 'status', lpAddress],
-  enabled: !!lpAddress,
+export const querySyncStatus = (chainId: number, lpAddress: string) => ({
+  queryKey: ['fetch', 'chainId', chainId, 'status', lpAddress],
+  enabled: !!chainId && !!lpAddress,
   queryFn: async () => {
     const params = {
       tranche: lpAddress,
     };
-
-    const res = await fetch(createUrl(`${config?.api.tracker}/status`, params));
+    const config = getChainSpecifiedConfig(chainId);
+    const res = await fetch(createUrl(`${config.api.tracker}/status`, params));
     if (!res.ok) {
       throw new Error('API request failed');
     }
@@ -215,8 +234,9 @@ export const querySyncStatus = (lpAddress: string) => ({
   },
 });
 
-export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Date) => ({
-  queryKey: ['fetch', 'feeAPR', tranche, user, getUnixTime(start), getUnixTime(end)],
+export const queryFeeAPR = (chainId: number, tranche: string, user: string, start: Date, end: Date) => ({
+  queryKey: ['fetch', 'chainId', chainId, 'feeAPR', tranche, user, getUnixTime(start), getUnixTime(end)],
+  enabled: !!chainId,
   queryFn: async () => {
     const params = {
       wallet: user,
@@ -227,7 +247,8 @@ export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Dat
       to: getUnixTime(endOfDay(end)),
       sort: 'asc',
     };
-    const url = createUrl(`${config?.api.tracker}/charts/apr`, params);
+    const config = getChainSpecifiedConfig(chainId);
+    const url = createUrl(`${config.api.tracker}/charts/apr`, params);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('API fetch failed');
@@ -247,11 +268,11 @@ export const queryFeeAPR = (tranche: string, user: string, start: Date, end: Dat
   },
 });
 
-const graphQlClient = new GraphQLClient(config.graph.analytics);
-
-export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => ({
-  queryKey: ['graph', 'llpVsBtc', tranche, getUnixTime(start), getUnixTime(end)],
+export const queryLLPAndBTCPrice = (chainId: number, tranche: string, start: Date, end: Date) => ({
+  queryKey: ['graph', 'chainId', chainId, 'llpVsBtc', tranche, getUnixTime(start), getUnixTime(end)],
+  enabled: !!chainId,
   queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
     const btc = config.tokens.BTC;
     const query = gql`
       query priceInfo($lpToken: Bytes!, $token: Bytes!, $start: Int!, $end: Int!) {
@@ -279,8 +300,8 @@ export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => 
         }
       }
     `;
-
-    return await graphQlClient.request<{
+    const { analyticsClient } = getGraphClient(chainId);
+    return await analyticsClient.request<{
       trancheStats: {
         timestamp: number;
         llpSupply: string;
@@ -300,10 +321,11 @@ export const queryLLPAndBTCPrice = (tranche: string, start: Date, end: Date) => 
   },
 });
 
-export const queryLvlPrices = () => ({
+export const queryLvlPrices = (chainId: number) => ({
   queryKey: ['fetch', 'lvlPrices'],
   queryFn: async () => {
-    const response = await fetch(`${config?.api.live}/lvl-prices`);
+    const config = getChainSpecifiedConfig(chainId);
+    const response = await fetch(`${config.api.live}/lvl-prices`);
     if (!response.ok) {
       throw new Error('API request failed');
     }
@@ -311,9 +333,24 @@ export const queryLvlPrices = () => ({
   },
 });
 
-const levelMasterGraphQlClient = new GraphQLClient(config.graph.levelMaster);
-export const queryLevelMasterRewardHistory = () => ({
-  queryKey: ['graph', 'levelMasterReward'],
+export const queryLvlPrice = (chainId: number) => ({
+  queryKey: ['fetch', 'lvlPrice'],
+  enabled: !!chainId,
+  queryFn: async () => {
+    const config = getChainSpecifiedConfig(chainId);
+    const response = await fetch(`${config?.api.live}/v2/token/lvl`);
+    if (!response.ok) {
+      throw new Error('lvl price request failed');
+    }
+    const parsed = TokenLVLSchema.parse(await response.json());
+    return BigInt(parsed.price.price);
+  },
+});
+
+
+export const queryLevelMasterRewardHistory = (chainId: number) => ({
+  queryKey: ['graph', 'chainId', chainId, 'levelMasterReward'],
+  enabled: !!chainId,
   queryFn: async () => {
     const query = gql`
       query rewardPerSecondHistoriesQuery {
@@ -332,7 +369,8 @@ export const queryLevelMasterRewardHistory = () => ({
         }
       }
     `;
-    const payload = await levelMasterGraphQlClient.request<{
+    const { levelMasterClient } = getGraphClient(chainId);
+    const payload = await levelMasterClient.request<{
       levelMasterRewardHistories: {
         id: string;
         masterChef: string;

@@ -1,39 +1,45 @@
 import { Config as bsc } from './bsc';
-import { TokenInfo, TokenInfoProps } from './type';
-export const config = bsc;
-export const getTokenAddress = (tokenSymbol?: string) => {
-  if (!tokenSymbol) {
-    return;
-  }
-  return config?.tokens[tokenSymbol]?.address;
+import { Config as arbitrum } from './arbitrum';
+import { ChainConfig, TokenInfo, TokenInfoProps } from './type';
+
+export const configs = [bsc, arbitrum];
+export const defaultChainConfig = configs[0];
+
+export const getChainSpecifiedConfig = (chainId: number) => {
+  return configs.filter((t) => t.chainId == chainId)[0];
 };
 
-export const getTokenConfig = (tokenSymbol: string) => {
+export const getTokenAddress = (chainConfig: ChainConfig, tokenSymbol?: string) => {
   if (!tokenSymbol) {
     return;
   }
-  const tokenConfig = config?.tokens[tokenSymbol] as TokenInfo;
+  return chainConfig.tokens[tokenSymbol]?.address;
+};
+
+export const getTokenConfig = (chainConfig: ChainConfig, tokenSymbol: string) => {
+  const tokenConfig = chainConfig.tokens[tokenSymbol] as TokenInfo;
 
   return { ...(tokenConfig || {}), symbol: tokenSymbol } as TokenInfoProps;
 };
 
-export const getTokenByAddress = (tokenAddress: string) => {
+export const getTokenByAddress = (chainConfig: ChainConfig, tokenAddress: string) => {
   if (!tokenAddress) {
     return;
   }
-  const tokens = config?.tokens;
+  const tokens = chainConfig.tokens;
   const tokenSymbol = Object.keys(tokens)?.find(
     (key) => tokens[key]?.address?.toLowerCase() === tokenAddress.toLowerCase(),
   );
   if (!tokenSymbol) {
     return;
   }
-  return getTokenConfig(tokenSymbol);
+  return getTokenConfig(chainConfig, tokenSymbol);
 };
 
-export const getTrancheBySlug = (slug: string | undefined | null) => {
+export const getTrancheBySlug = (chainId: number, slug: string | undefined | null) => {
+  const chainConfig = getChainSpecifiedConfig(chainId);
   if (slug != null) {
-    return config.tranches.find((t) => t.slug == slug.toLowerCase()) || config.tranches[0];
+    return chainConfig.tranches.find((t) => t.slug == slug.toLowerCase());
   }
-  return config.tranches[0];
+  return chainConfig.tranches[0];
 };

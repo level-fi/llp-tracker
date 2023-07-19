@@ -1,4 +1,5 @@
-import { formatUnits } from 'ethers';
+import { FixedNumber, formatUnits } from 'ethers';
+import { DefaultWidthFixedNumber } from './constant';
 
 export type FormatOption = {
   locale: string;
@@ -9,7 +10,6 @@ export type FormatOption = {
   percentage?: boolean;
   currency?: string;
   thousandGrouping: boolean;
-
 };
 
 const defaultFormat: FormatOption = {
@@ -88,11 +88,7 @@ export const formatNumber = (input: number, options?: Partial<FormatOption>): st
   return formatter.format(input);
 };
 
-export const formatNumberWithThreshold = (
-  input: number,
-  options?: Partial<FormatOption>,
-  threshold = 0.01,
-): string => {
+export const formatNumberWithThreshold = (input: number, options?: Partial<FormatOption>, threshold = 0.01): string => {
   if (input && threshold && Math.abs(input) < threshold) {
     return `${input > 0 ? '<' : '≈ -'}${formatNumber(threshold, {
       ...options,
@@ -148,4 +144,22 @@ export const displayAsCurrency = (
     threshold,
     prefix,
   );
+};
+
+export const safeParseUnits = (x: string, decimals: number, width = DefaultWidthFixedNumber): bigint | undefined => {
+  if (!x) {
+    return;
+  }
+  try {
+    const lastDot = x.lastIndexOf('.');
+    if (lastDot >= 0) {
+      x = x.substr(0, lastDot + decimals + 1);
+    }
+    return FixedNumber.fromString(x, {
+      width: width,
+      decimals: decimals,
+    }).value;
+  } catch (e) {
+    return;
+  }
 };

@@ -1,20 +1,16 @@
 import React, { useMemo, useReducer } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { queryLLPAndBTCPrice, queryLevelMasterRewardHistory, queryLvlPrices } from '../../utils/queries';
+import { queryLLPAndBTCPrice, queryLevelMasterRewardHistory, queryLvlPrice, queryLvlPrices } from '../../utils/queries';
 import { useQuery } from '@tanstack/react-query';
 import { NoData } from '../../components/NoData';
-import { formatNumber } from '../../utils/numbers';
+import { formatNumber, safeParseUnits } from '../../utils/numbers';
 import { unixTimeToDate } from '../../utils/times';
 import Spinner from '../../components/Spinner';
 import { ChartSyncData, ChartSyncActive } from '../../models/Chart';
-import { toNumber } from 'ethers';
-
-type ChartInfoStat = {
-  timestamp: number;
-  llpPrice: number;
-  btcPrice: number;
-  llpPriceWithLVLReward: number;
-};
+import { formatUnits } from 'ethers';
+import { getChainSpecifiedConfig, getTokenConfig } from '../../config';
+import { VALUE_DECIMALS } from '../../utils/constant';
+import { getUnixTime, startOfDay } from 'date-fns';
 
 const tooltipValueAndAmountFormatter = (value: any, _: any, item: any): string => {
   if (item && item.dataKey === 'amount') {
@@ -51,60 +47,60 @@ const syncMethod = (chartData: ChartSyncData[], active: ChartSyncActive) => {
   }
 };
 export const LLPAndBTCPrice: React.FC<{
+  chainId: number;
   trancheId: number;
   lpAddress: string;
   start: Date;
   end: Date;
   userLiquidityInTranche?: bigint;
-}> = ({ trancheId, lpAddress, start, end }) => {
-  const llpVsBtc = useQuery(queryLLPAndBTCPrice(lpAddress, start, end));
-  const { data: lvlPriceQuery } = useQuery(queryLvlPrices());
-  const lvlPrices = lvlPriceQuery?.map((t: any) => {
+}> = ({ chainId, trancheId, lpAddress, start, end }) => {
+  const chainConfig = getChainSpecifiedConfig(chainId);
+  const lvlToken = getTokenConfig(chainConfig, chainConfig.rewardToken);
+  const llpVsBtc = useQuery(queryLLPAndBTCPrice(chainId, lpAddress, start, end));
+  const { data: currentLvlPrice } = useQuery(queryLvlPrice(chainId));
+  const { data: lvlPricesResponse } = useQuery(queryLvlPrices(chainId));
+  const lvlPrices = lvlPricesResponse?.map((t: any) => {
     return {
       price: t.price,
       timestamp: new Date(t.timestamp),
     };
   });
-  const { data: histories } = useQuery(queryLevelMasterRewardHistory());
+  const { data: rewardHistories } = useQuery(queryLevelMasterRewardHistory(chainId));
   const chartData = useMemo(() => {
     if (!llpVsBtc.data) {
       return [];
     }
     return llpVsBtc.data.trancheStats?.map((p) => {
-      let rewardHistoryItem;
-      if (histories?.levelMasterRewardHistories?.length && p.timestamp > 1672063288) { //26/12/2022
-        rewardHistoryItem = histories?.levelMasterRewardHistories?.find((h) => h.timestamp <= p.timestamp);
-        if (!rewardHistoryItem) {
-          rewardHistoryItem = histories?.levelMasterRewardHistories[histories?.levelMasterRewardHistories.length - 1];
-        }
-      }
-      const poolInfo = histories?.levelMasterPoolInfoDailies?.find((t) => t.timestamp <= p.timestamp);
+      const rewardHistoryItem = rewardHistories?.levelMasterRewardHistories?.find((h) => h.timestamp <= p.timestamp);
+      const poolInfo = rewardHistories?.levelMasterPoolInfoDailies?.find((t) => t.timestamp <= p.timestamp);
       const rewardPerDay =
         rewardHistoryItem?.rewardPerSecond && poolInfo?.allocPoints?.length && poolInfo?.totalAllocPoint > 0n
           ? (poolInfo?.allocPoints[trancheId] * rewardHistoryItem?.rewardPerSecond * 86400n) / poolInfo?.totalAllocPoint
           : 0n;
-      let lvlPriceItem;
-      if (lvlPrices?.length) {
-        lvlPriceItem = lvlPrices?.find(
-          (l: any) =>
-            l.timestamp.getTime() >= p.timestamp * 1000 && l.timestamp.getTime() < (p.timestamp + 86400) * 1000,
-        );
+      const lvlPriceItem = lvlPrices?.find((l: any) => l.timestamp >= p.timestamp && l.timestamp < p.timestamp + 86400);
+      let lvlPrice = lvlPriceItem ? safeParseUnits(lvlPriceItem.price, VALUE_DECIMALS - lvlToken.decimals) : 0n;
+      if (p.timestamp >= getUnixTime(startOfDay(new Date()))) {
+        lvlPrice = currentLvlPrice || 0n;
       }
-      const lvlPrice = lvlPriceItem ? BigInt((lvlPriceItem.price * 1e12).toFixed(0)) : 0n;
-      const totalSupply = p.llpSupply ? BigInt(+p.llpSupply * 1e18) : 0n;
-      const rewardPrice = lvlPrice && totalSupply ? toNumber((lvlPrice * rewardPerDay) / totalSupply) / 1e12 : 0;
+      const totalSupply = p.llpSupply ? safeParseUnits(p.llpSupply.toString(), lvlToken.decimals) : 0n;
+      const rewardPrice =
+        lvlPrice && totalSupply
+          ? +formatUnits((lvlPrice * rewardPerDay) / totalSupply, VALUE_DECIMALS - lvlToken.decimals)
+          : 0;
       return {
         timestamp: +p.timestamp,
-        llpPrice: parseFloat(p.llpPrice),
-        llpPriceWithLVLReward: parseFloat(p.llpPrice) + rewardPrice,
-      } as ChartInfoStat;
+        llpPrice: p.llpPrice,
+        llpPriceWithLVLReward: p.llpPrice + rewardPrice,
+      };
     });
   }, [
-    histories?.levelMasterPoolInfoDailies,
-    histories?.levelMasterRewardHistories,
     llpVsBtc.data,
-    lvlPrices,
+    rewardHistories?.levelMasterRewardHistories,
+    rewardHistories?.levelMasterPoolInfoDailies,
     trancheId,
+    lvlPrices,
+    lvlToken.decimals,
+    currentLvlPrice,
   ]);
 
   const [disabled, setDisabled] = useReducer((a: Record<string, boolean>, b: string) => {
@@ -185,7 +181,7 @@ export const LLPAndBTCPrice: React.FC<{
                     strokeWidth={2}
                     stroke={'#2cb060'}
                     dataKey="llpPriceWithLVLReward"
-                    name="LVL Price With LVL Rewards"
+                    name="LLP Price With LVL Rewards"
                     hide={disabled.llpPriceWithLVLReward}
                   />
                 </LineChart>

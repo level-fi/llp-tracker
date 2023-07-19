@@ -32,14 +32,15 @@ const tooltipPercentFormatter = (value: any, _: any, item: any): string => {
 
 const tooltipLabelFormatter = unixTimeToDate('MMMM dd yyyy HH:mm');
 
-const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: Date }> = ({
+const FeeAPR: React.FC<{ chainId: number; account: string; lpAddress: string; start: Date; end: Date }> = ({
+  chainId,
   account,
   lpAddress,
   start,
   end,
 }) => {
-  const feeAprQuery = useQuery(queryFeeAPR(lpAddress, account, start, end));
-  const live = useQuery(queryLiveFrame(lpAddress, account, end));
+  const feeAprQuery = useQuery(queryFeeAPR(chainId, lpAddress, account, start, end));
+  const live = useQuery(queryLiveFrame(chainId, lpAddress, account, end));
   const chartData = useMemo(() => {
     if (feeAprQuery.isLoading || !feeAprQuery.data) {
       return [];
