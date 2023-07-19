@@ -39,7 +39,7 @@ export const getTokenByAddress = (chainConfig: ChainConfig, tokenAddress: string
 export const getTrancheBySlug = (chainId: number, slug: string | undefined | null) => {
   const chainConfig = getChainSpecifiedConfig(chainId);
   if (slug != null) {
-    return chainConfig.tranches.find((t) => t.slug == slug.toLowerCase());
+    return chainConfig.tranches.find((t) => t.slug == slug.toLowerCase()) || chainConfig.tranches[0];
   }
   return chainConfig.tranches[0];
 };

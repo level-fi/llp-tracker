@@ -115,7 +115,7 @@ export const LLPAndBTCPrice: React.FC<{
       <h4 className="m-0 mb-20px text-16px">LLP Price</h4>
       <div className="">
         {llpVsBtc.isLoading ? (
-          <div className="p-y-50px flex justify-center">
+          <div className="flex items-center justify-center min-h-280px">
             <Spinner className="text-32px" />
           </div>
         ) : (

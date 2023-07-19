@@ -63,9 +63,9 @@ const parseParams = (searchParams: URLSearchParams) => {
 
   const start = startParam && !isNaN(+startParam) ? fromUnixTime(+startParam) : sub(new Date(), { months: 1 });
   const end = endParam && !isNaN(+endParam) ? fromUnixTime(+endParam) : new Date();
-  const chainId = chainIdParam ? +chainIdParam : defaultChainConfig.chainId;
+  const allChainSupport = configs.map((t) => t.chainId);
+  const chainId = chainIdParam && allChainSupport.includes(+chainIdParam) ? +chainIdParam : defaultChainConfig.chainId;
   const tranche = getTrancheBySlug(chainId, trancheParam);
-
   return { start, end, tranche, chainId };
 };
 
@@ -130,17 +130,17 @@ const LpView: React.FC = () => {
               <IconExternalLink />
             </a>
           </div>
-          <div className="lg-ml-auto flex items-center bg-panel rd-10px h-42px px-2px py-2px w-fit b-1 b-solid b-#3A3D43">
+          <div className="lg-ml-auto flex items-center bg-panel rd-10px h-46px px-2px py-2px w-fit b-1 b-solid b-#3A3D43">
             {configs.map((chain) => (
               <div
                 key={chain.chainId}
                 onClick={() => {
                   searchParams.set('chainId', chain.chainId.toString());
-                  setSelectedChain(chain.chainId);
                   setSearchParam(searchParams);
+                  setSelectedChain(chain.chainId);
                 }}
                 className={c(
-                  'flex items-center justify-center px-6px lg:w-128px h-100%',
+                  'flex items-center justify-center px-6px w-110px lg-w-135px h-100%',
                   'text-14px lg:text-16px font-600 hover:cursor-pointer hover:c-primary',
                   {
                     'bg-#1c1c1e rd-10px c-primary': selectedChain === chain.chainId,

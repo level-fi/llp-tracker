@@ -59,7 +59,7 @@ const FeeAPR: React.FC<{ chainId: number; account: string; lpAddress: string; st
     <div className="relative min-h-380px">
       <h4 className="m-0 mb-20px text-16px">Daily Return</h4>
       {feeAprQuery.isLoading ? (
-        <div className="p-y-50px flex justify-center">
+        <div className="flex items-center justify-center min-h-280px">
           <Spinner className="text-32px" />
         </div>
       ) : (

@@ -59,7 +59,7 @@ const LLPValueChange: React.FC<{ chainId: number; account: string; lpAddress: st
     <div className="relative min-h-380px">
       <h4 className="m-0 mb-20px text-16px">LLP Value</h4>
       {liquidityTracking.isLoading ? (
-        <div className="p-y-50px flex justify-center">
+        <div className="flex items-center justify-center min-h-280px">
           <Spinner className="text-32px" />
         </div>
       ) : (
