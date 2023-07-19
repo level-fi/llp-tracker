@@ -5,6 +5,9 @@ import unocss from 'unocss/vite';
 
 export default defineConfig({
   plugins: [react(), unocss({
+    shortcuts: [
+      ['page-content', 'max-w-100% px-15px py-30px mx-auto w-100%'],
+    ],
     theme: {
       colors: {
         primary: '#ff6bd5'

@@ -106,74 +106,58 @@ const LpView: React.FC = () => {
     [setSearchParam, searchParams],
   );
 
+  const allTranches = configs.flatMap((t) =>
+    t.tranches.map((c) => {
+      return { ...c, chainId: t.chainId };
+    }),
+  );
   return (
     <>
       <TopBar />
-      <div className="container px-15px mx-auto mt-30px display-block lg-display-none">
+      <div className="w-100% mx-auto px-15px mt-30px display-block lg-display-none">
         <SearchAddress />
       </div>
-
-      <div className="container mx-auto pt-20px lg-pt-30px pb-30px px-15px">
-        <div className="flex items-center mb-20px lg-mb-30px ">
-          <div className="display-none lg-display-flex items-center">
-            <img src={iconWalletAlt} className="inline-block w-20px h-20px lg-w-32px lg-h-32px" />
-            <h2 className="m-0 text-16px lg-text-24px font-900 ml-8px lg-ml-16px">{account}</h2>
-            <div className="ml-10px mr-5px">
-              <ButtonCopy text={account} />
-            </div>
-            <a
-              href={`${chainConfig.explorerUrl}/address/${account}`}
-              target="_blank"
-              rel="noreferrer noopenner"
-              className="color-#d9d9d966 hover:color-primary mx-5px px-5px"
-            >
-              <IconExternalLink />
-            </a>
+      <div className="page-content pt-20px lg-pt-30px pb-30px">
+        <div className="display-none lg-display-flex items-center mb-20px lg-mb-30px">
+          <img src={iconWalletAlt} className="inline-block w-20px h-20px lg-w-32px lg-h-32px" />
+          <h2 className="m-0 text-16px lg-text-24px font-900 ml-8px lg-ml-16px">{account}</h2>
+          <div className="ml-10px mr-5px">
+            <ButtonCopy text={account} />
           </div>
-          <div className="lg-ml-auto flex items-center bg-panel rd-10px h-46px px-2px py-2px w-fit b-1 b-solid b-#3A3D43">
-            {configs.map((chain) => (
-              <div
-                key={chain.chainId}
-                onClick={() => {
-                  searchParams.set('chainId', chain.chainId.toString());
-                  setSearchParam(searchParams);
-                  setSelectedChain(chain.chainId);
-                }}
-                className={c(
-                  'flex items-center justify-center px-6px w-110px lg-w-135px h-100%',
-                  'text-14px lg:text-16px font-600 hover:cursor-pointer hover:c-primary',
-                  {
-                    'bg-#1c1c1e rd-10px c-primary': selectedChain === chain.chainId,
-                  },
-                )}
-              >
-                <img src={chainIcons[chain.chainId]} className="mr-6px h-16px lg:h-22px" />
-                {chain.chainName}
-              </div>
-            ))}
-          </div>
+          <a
+            href={`${chainConfig.explorerUrl}/address/${account}`}
+            target="_blank"
+            rel="noreferrer noopenner"
+            className="color-#d9d9d966 hover:color-primary mx-5px px-5px"
+          >
+            <IconExternalLink />
+          </a>
         </div>
-        <div className="flex mb-10px lg-mb-10px items-baseline justify-between flex-col lg-flex-row lg-items-center">
-          <div className="flex">
-            <nav className="gap-20px flex items-center w-fit nav-tab">
-              {chainConfig.tranches.map((t) => (
+        <div className="flex mb-10px xl-mb-10px items-baseline justify-between flex-col xl-flex-row xl-items-center">
+          <div className="flex w-100% overflow-auto lg-overflow-initial">
+            <nav className="gap-16px flex items-center w-fit nav-tab">
+              {allTranches.map((t, index) => (
                 <div
-                  key={t.id}
+                  className="relative"
+                  key={index}
                   onClick={() => {
                     setTranche(t.slug);
+                    searchParams.set('chainId', t.chainId.toString());
+                    setSearchParam(searchParams);
+                    setSelectedChain(t.chainId);
                   }}
                 >
                   <TrancheItem
-                    chainId={selectedChain}
+                    chainId={t.chainId}
                     account={account}
-                    active={t.slug == filter.tranche.slug}
+                    active={t.slug == filter.tranche.slug && t.chainId == filter.chainId}
                     {...t}
                   />
                 </div>
               ))}
             </nav>
           </div>
-          <label className="flex h-42px mt-20px lg-mt-0" htmlFor="date-range">
+          <label className="flex h-42px mt-20px xl-mt-0" htmlFor="date-range">
             <div className="b-none rd-tl-10px flex items-center p-x-15px rd-bl-10px bg-#421E54">
               <IconCalendar />
             </div>
@@ -245,18 +229,18 @@ const TrancheItem: React.FC<
     active?: boolean;
     chainId: number;
   }
-> = ({ chainId, address, slug, name, active, account }) => {
+> = ({ chainId, address, name, active, account }) => {
   const live = useQuery(queryLiveFrame(chainId, address, account, new Date()));
   return (
     <div className={`tab-item cursor-pointer color-#fff ${active ? 'tab-active' : ''}`}>
-      <div className="tab-item-content px-10px py-10px min-h-70px">
-        <div className="flex items-start z-1">
-          <img src={chainIcons[chainId]} className="hidden lg-block mr-6px mt-3px w-16px z-1" />
-          <div className="relative">
-            <strong className="pb-8px block text-16px">{name}</strong>
-            <div className="text-14px">
+      <div className="tab-item-content flex items-center px-10px py-7x min-h-54px">
+        <div className="flex items-center z-1">
+          <img src={chainIcons[chainId]} className="mr-8px w-16px lg-w-20px z-1" />
+          <div className="relative flex flex-col justify-center">
+            <strong className="pb-2px block text-16px">{name.replace(' Tranche', '')}</strong>
+            <div className={`value text-13px ${active ? 'c-#fff' : 'c-#ADABAB'}`}>
               {live.isLoading ? (
-                <Spinner className="text-16px color-#fffd" />
+                <Spinner className="text-14px color-#fff" />
               ) : live.data?.data?.amount && live.data?.data?.price ? (
                 formatNumber(live.data.data.amount * live.data.data.price, {
                   currency: 'USD',
