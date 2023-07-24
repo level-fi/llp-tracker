@@ -9,6 +9,7 @@ import { percentFormatter } from '../../utils/helpers';
 import Spinner from '../../components/Spinner';
 import { ChartSyncActive, ChartSyncData } from '../../models/Chart';
 import { FeeAprInfo } from '../../models/Liquidity';
+import { chainIcons } from '../../config/common';
 
 const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
 
@@ -32,14 +33,15 @@ const tooltipPercentFormatter = (value: any, _: any, item: any): string => {
 
 const tooltipLabelFormatter = unixTimeToDate('MMMM dd yyyy HH:mm');
 
-const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: Date }> = ({
+const FeeAPR: React.FC<{ chainId: number; account: string; lpAddress: string; start: Date; end: Date }> = ({
+  chainId,
   account,
   lpAddress,
   start,
   end,
 }) => {
-  const feeAprQuery = useQuery(queryFeeAPR(lpAddress, account, start, end));
-  const live = useQuery(queryLiveFrame(lpAddress, account, end));
+  const feeAprQuery = useQuery(queryFeeAPR(chainId, lpAddress, account, start, end));
+  const live = useQuery(queryLiveFrame(chainId, lpAddress, account, end));
   const chartData = useMemo(() => {
     if (feeAprQuery.isLoading || !feeAprQuery.data) {
       return [];
@@ -56,9 +58,12 @@ const FeeAPR: React.FC<{ account: string; lpAddress: string; start: Date; end: D
   }, [feeAprQuery, live]);
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">Daily Return</h4>
+      <div className="flex items-center m-0 mb-20px">
+        <h4 className="text-16px">Daily Return</h4>
+        <img src={chainIcons[chainId]} className="w-24px ml-auto" />
+      </div>
       {feeAprQuery.isLoading ? (
-        <div className="p-y-50px flex justify-center">
+        <div className="flex items-center justify-center min-h-280px">
           <Spinner className="text-32px" />
         </div>
       ) : (

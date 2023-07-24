@@ -36,12 +36,37 @@
   box-sizing: border-box;
 }
 
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 8px;
+  background: #29292c;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: #4d4c4c;
+}
+
 body {
   margin: 0;
   background-color: #2f2733;
   color: #fff;
-  font-family: 'Satoshi Variable', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family:
+    'Satoshi Variable',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
   scroll-behavior: smooth;
 }
 
@@ -60,6 +85,11 @@ button:not(:disabled) {
     position: relative;
     padding: 1px;
     border-radius: 10px;
+    min-width: 145px;
+
+    @media only screen and (max-width: 992px) {
+      min-width: 135px;
+    }
 
     &::before {
       position: absolute;
@@ -71,10 +101,9 @@ button:not(:disabled) {
       bottom: 0;
       z-index: -1;
       transition: all 0.2s;
-      background: linear-gradient(96.25deg, #ff6bd5 1.4%, #ff45ca 119.39%);
       opacity: 0;
     }
-    @media only screen and (min-width: 992px) {
+    @media only screen and (min-width: 1280px) {
       &::after {
         content: '';
         position: absolute;
@@ -92,7 +121,6 @@ button:not(:disabled) {
       transition: all 0.2s;
       background-color: #1c1321;
       border-radius: 10px;
-
       &::before {
         position: absolute;
         border-radius: 10px;
@@ -110,6 +138,9 @@ button:not(:disabled) {
 
     &:hover,
     &.tab-active {
+      .value {
+        color: #fff;
+      }
       &::before {
         opacity: 1;
       }

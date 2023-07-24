@@ -7,7 +7,7 @@ import { SearchAddress } from './SearchAddress';
 const TopBar: React.FC = () => {
   return (
     <header className="w-100% bg-#1C1321">
-      <div className="px-15px container mx-auto h-64px flex items-center gap-25px">
+      <div className="page-content h-64px flex items-center gap-25px">
         <Link to="/" className="inline-block">
           <img src={logo} width={120} height={32} />
         </Link>

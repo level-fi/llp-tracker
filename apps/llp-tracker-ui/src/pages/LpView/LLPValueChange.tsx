@@ -13,6 +13,7 @@ import { ChartSyncActive, ChartSyncData } from '../../models/Chart';
 import { ReactComponent as IconDoubleChevronUp } from '../../assets/icons/ic-double-chevron-up.svg';
 import { ReactComponent as IconDoubleChevronDown } from '../../assets/icons/ic-double-chevron-down.svg';
 import { LiquidityTracking } from '../../models/Liquidity';
+import { chainIcons } from '../../config/common';
 
 const xAxisDateTimeFormatter = unixTimeToDate('dd/MM');
 
@@ -27,19 +28,20 @@ const syncMethod = (chartData: ChartSyncData[], active: ChartSyncActive) => {
   }
 };
 
-const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date; end: Date }> = ({
+const LLPValueChange: React.FC<{ chainId: number; account: string; lpAddress: string; start: Date; end: Date }> = ({
+  chainId,
   account,
   lpAddress,
   start,
   end,
 }) => {
-  const liquidityTracking = useQuery(queryLiquidityTracking(lpAddress, account, start, end));
-  const live = useQuery(queryLiveFrame(lpAddress, account, end));
+  const liquidityTracking = useQuery(queryLiquidityTracking(chainId, lpAddress, account, start, end));
+  const live = useQuery(queryLiveFrame(chainId, lpAddress, account, end));
   const chartData = useMemo(() => {
     if (liquidityTracking.isLoading || liquidityTracking.error || !liquidityTracking.data) {
       return [];
     }
-    const data = [...liquidityTracking.data]
+    const data = [...liquidityTracking.data];
     if (live.data?.data) {
       data.push({
         value: live.data.data.value,
@@ -49,16 +51,19 @@ const LLPValueChange: React.FC<{ account: string; lpAddress: string; start: Date
         liquidityChange: live.data.data.valueMovement.valueChange,
         totalChange: live.data.data.totalChange,
         timestamp: live.data.data.to,
-      } as LiquidityTracking)
+      } as LiquidityTracking);
     }
     return data;
   }, [liquidityTracking, live]);
 
   return (
     <div className="relative min-h-380px">
-      <h4 className="m-0 mb-20px text-16px">LLP Value</h4>
+      <div className="flex items-center m-0 mb-20px">
+        <h4 className="text-16px">LLP Value</h4>
+        <img src={chainIcons[chainId]} className="w-24px ml-auto" />
+      </div>
       {liquidityTracking.isLoading ? (
-        <div className="p-y-50px flex justify-center">
+        <div className="flex items-center justify-center min-h-280px">
           <Spinner className="text-32px" />
         </div>
       ) : (

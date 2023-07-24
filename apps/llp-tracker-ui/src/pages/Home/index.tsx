@@ -37,7 +37,7 @@ const Home: React.FC = () => {
   return (
     <div className="relative">
       <div className="absolute top-0 left-0 right-0 pt-30px">
-        <div className="container mx-auto flex flex-row-reverse px-20px">
+        <div className="page-content flex flex-row-reverse px-20px">
           <GotoApp />
         </div>
       </div>

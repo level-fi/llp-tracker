@@ -47,6 +47,7 @@ export default () => ({
     checkPoint: process.env.SCHEDULER_CHECKPOINT,
   },
   chainConfig: {
+    chainId: process.env.CHAINID,
     tranches: process.env.CHAINCONFIG_TRANCHES,
   },
 })

@@ -195,7 +195,7 @@ export class TimeframeService {
     ]);
     const totalGraphCheckpoint = walletTrancheHistories?.[0]?.index;
     const totalESCheckpoint = checkPointCounter.count;
-    if (totalGraphCheckpoint !== totalESCheckpoint) {
+    if (totalGraphCheckpoint > totalESCheckpoint) {
       return false;
     }
     //
@@ -284,7 +284,7 @@ export class TimeframeService {
         pnl:            ${numberOfPnL}
 `);
 
-    return numberOfFee === graphNumberOfFee && numberOfPnL === graphNumberOfPnl;
+    return numberOfFee >= graphNumberOfFee && numberOfPnL >= graphNumberOfPnl;
   }
 
   generateCronCheckpoints(timeseries: number[]): number[] {
@@ -612,6 +612,10 @@ export class TimeframeService {
     let avgValue = 0;
     for (let i = 0; i < histories.length; i++) {
       const item = histories[i];
+      if (!i && item.isCron) {
+        continue;
+      }
+
       if (!data) {
         data = {
           wallet: wallet,
@@ -631,7 +635,14 @@ export class TimeframeService {
           },
           histories: [{ ...JSON.parse(JSON.stringify(item)) }],
         };
-        const lastTime = results[results.length - 1]?.to;
+
+        let lastTime: number;
+        if (results.length) {
+          lastTime = results[results.length - 1].to;
+        } else if (histories[i - 1]?.isCron) {
+          lastTime = histories[i - 1].timestamp;
+        }
+
         if (lastTime) {
           data.from = lastTime;
           avgValue +=
@@ -650,7 +661,7 @@ export class TimeframeService {
         data.valueMovement.valueChange += item.valueMovement.valueChange;
         data.histories.push({ ...JSON.parse(JSON.stringify(item)) });
       }
-      if ((i && item.isCron) || (results.length && !item.amount)) {
+      if (item.isCron || (results.length && !item.amount)) {
         data.to = item.timestamp;
         data.amount = item.amount;
         data.price = item.price;
@@ -728,12 +739,12 @@ export class TimeframeService {
   async buildLiveCheckpoint(
     tranche: string,
     wallet: string,
-    last: AggreatedData
+    histories: AggreatedDataHistory[],
   ) {
-    if (!last || !last.amount) {
-      return;
+    const lastHistory = histories[histories.length - 1]
+    if (!lastHistory) {
+      return
     }
-    const lastHistory = last.histories[last.histories.length - 1];
     const cpStart: Checkpoint = {
       isCron: lastHistory.isCron,
       wallet: wallet,
@@ -746,31 +757,91 @@ export class TimeframeService {
       isRemove: lastHistory.isRemove,
       timestamp: lastHistory.timestamp,
       tx: lastHistory.tx,
-    };
-    const now = Math.floor(Date.now() / 1000);
-    const timestamp = this.getNextCronCheckpoint(now);
-    const price = await this.trancheService.getLPPrice(tranche, timestamp);
+    }
+    const now = Math.floor(Date.now() / 1000)
+    const timestamp = this.getNextCronCheckpoint(now)
+    const price = await this.trancheService.getLPPrice(tranche, timestamp)
+    const lpChange = await this.aggregateAmountChange(
+      wallet,
+      tranche,
+      cpStart.timestamp,
+      timestamp,
+    )
     const cpEnd: Checkpoint = {
       isCron: true,
       wallet: wallet,
       tranche: tranche,
-      lpAmount: lastHistory.amount,
-      lpAmountChange: 0,
-      value: lastHistory.amount * price,
+      lpAmount: lpChange?.amount || lastHistory.amount,
+      lpAmountChange: lpChange?.amountChange || 0,
+      value: (lpChange?.amount || lastHistory.amount) * price,
       price: price,
       block: undefined,
       isRemove: false,
       timestamp: timestamp,
       tx: undefined,
-    };
+    }
+    if (!cpStart.lpAmount && !cpEnd.lpAmount) {
+      return
+    }
     const newHistoryItem = await this.aggreateDataHistories(
       tranche,
       cpStart,
-      cpEnd
-    );
-    const histories = lastHistory.isCron
+      cpEnd,
+    )
+    const newHistories = lastHistory.isCron
       ? [lastHistory, newHistoryItem]
-      : [...last.histories, newHistoryItem];
-    return this.aggreateData(tranche, wallet, histories);
+      : [...histories, newHistoryItem]
+    return this.aggreateData(tranche, wallet, newHistories)[0]
+  }
+
+  async aggregateAmountChange(
+    wallet: string,
+    tranche: string,
+    start: number,
+    end: number,
+  ) {
+    const existing = await this.esService.indices.exists({
+      index: this.utilService.checkPointIndex,
+    })
+    if (!existing) {
+      return
+    }
+    const checkpoints = await this.esService.search<Checkpoint>({
+      index: this.utilService.checkPointIndex,
+      query: {
+        bool: {
+          must: [
+            {
+              term: {
+                wallet: wallet,
+              },
+            },
+            {
+              term: {
+                tranche: tranche,
+              },
+            },
+            {
+              range: {
+                timestamp: {
+                  gt: start,
+                  lte: end,
+                },
+              },
+            },
+          ],
+        },
+      },
+      sort: {
+        timestamp: 'desc',
+      },
+    })
+    return {
+      amount: checkpoints.hits.hits?.[0]?._source?.lpAmount,
+      amountChange: checkpoints.hits.hits?.reduce(
+        (total, current) => total + (current?._source?.lpAmountChange || 0),
+        0,
+      ),
+    }
   }
 }
