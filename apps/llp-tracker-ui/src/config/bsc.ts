@@ -1,3 +1,4 @@
+import { subgraphQueryKey } from '../utils/constant';
 import { ChainConfig } from './type';
 
 export const Config: ChainConfig = {
@@ -8,7 +9,7 @@ export const Config: ChainConfig = {
   explorerUrl: 'https://bscscan.com',
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   graph: {
-    analytics: 'https://subgraph.satsuma-prod.com/bd12c59de673/levelfinance/analytics/api',
+    analytics: `https://subgraph.satsuma-prod.com/${subgraphQueryKey}/levelfinance/analytics/api`,
     levelMaster: 'https://api.thegraph.com/subgraphs/name/level-fi/level-master',
   },
   api: {

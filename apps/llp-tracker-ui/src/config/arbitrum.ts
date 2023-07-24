@@ -1,3 +1,4 @@
+import { subgraphQueryKey } from '../utils/constant';
 import { ChainConfig } from './type';
 
 export const Config: ChainConfig = {
@@ -8,7 +9,7 @@ export const Config: ChainConfig = {
   explorerUrl: 'https://arbiscan.io',
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   graph: {
-    analytics: 'https://subgraph.satsuma-prod.com/0bd684a706ac/levelfinance/analytics-arbitrum/api',
+    analytics: `https://subgraph.satsuma-prod.com/${subgraphQueryKey}/levelfinance/analytics-arbitrum/api`,
     levelMaster: 'https://api.thegraph.com/subgraphs/name/level-fi/level-master-arb',
   },
   api: {
@@ -82,5 +83,5 @@ export const Config: ChainConfig = {
       threshold: 0.00001,
     },
   },
-  rewardToken: 'LVL'
+  rewardToken: 'LVL',
 };
