@@ -329,7 +329,12 @@ export const queryLvlPrices = (chainId: number) => ({
     if (!response.ok) {
       throw new Error('API request failed');
     }
-    return await response.json();
+    return ((await response.json()) as any[]).map((t) => {
+      return {
+        price: t.price,
+        timestamp: getUnixTime(new Date(t.timestamp)),
+      };
+    });
   },
 });
 

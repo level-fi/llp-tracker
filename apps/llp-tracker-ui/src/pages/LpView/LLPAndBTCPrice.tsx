@@ -59,13 +59,7 @@ export const LLPAndBTCPrice: React.FC<{
   const lvlToken = getTokenConfig(chainConfig, chainConfig.rewardToken);
   const llpVsBtc = useQuery(queryLLPAndBTCPrice(chainId, lpAddress, start, end));
   const { data: currentLvlPrice } = useQuery(queryLvlPrice(chainId));
-  const { data: lvlPricesResponse } = useQuery(queryLvlPrices(chainId));
-  const lvlPrices = lvlPricesResponse?.map((t: any) => {
-    return {
-      price: t.price,
-      timestamp: new Date(t.timestamp),
-    };
-  });
+  const { data: lvlPrices } = useQuery(queryLvlPrices(chainId));
   const { data: rewardHistories } = useQuery(queryLevelMasterRewardHistory(chainId));
   const chartData = useMemo(() => {
     if (!llpVsBtc.data) {
@@ -78,7 +72,7 @@ export const LLPAndBTCPrice: React.FC<{
         rewardHistoryItem?.rewardPerSecond && poolInfo?.allocPoints?.length && poolInfo?.totalAllocPoint > 0n
           ? (poolInfo?.allocPoints[trancheId] * rewardHistoryItem?.rewardPerSecond * 86400n) / poolInfo?.totalAllocPoint
           : 0n;
-      const lvlPriceItem = lvlPrices?.find((l: any) => l.timestamp >= p.timestamp && l.timestamp < p.timestamp + 86400);
+      const lvlPriceItem = lvlPrices?.find((l) => l.timestamp >= p.timestamp && l.timestamp < p.timestamp + 86400);
       let lvlPrice = lvlPriceItem ? safeParseUnits(lvlPriceItem.price, VALUE_DECIMALS - lvlToken.decimals) : 0n;
       if (p.timestamp >= getUnixTime(startOfDay(new Date()))) {
         lvlPrice = currentLvlPrice || 0n;

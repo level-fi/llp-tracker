@@ -4,7 +4,7 @@ export const Config: ChainConfig = {
   chainId: 42161,
   chainName: 'Arbitrum',
   etherscanName: 'ArbiScan',
-  rpcUrl: 'https://arb-mainnet.g.alchemy.com/v2/nvmp23wCDNKccCUe596f3DuNtWYKHn2p',
+  rpcUrl: 'https://arb1.arbitrum.io/rpc',
   explorerUrl: 'https://arbiscan.io',
   multicall: '0xcA11bde05977b3631167028862bE2a173976CA11',
   graph: {
