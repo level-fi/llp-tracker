@@ -1,7 +1,7 @@
-import { IsAddress } from '../validator'
 import { Type } from 'class-transformer'
 import { IsInt, IsNotEmpty, Max, Min, Validate } from 'class-validator'
 import { BigNumber } from 'ethers'
+import { IsAddress } from '../validator'
 
 export enum PERSHARES_TYPE {
   FEE,
@@ -94,14 +94,6 @@ export class AggreatedData {
   histories: AggreatedDataHistory[]
 }
 
-export class RequestLiveTimeFrame {
-  @Validate(IsAddress)
-  wallet: string
-
-  @Validate(IsAddress)
-  tranche: string
-}
-
 export class RequestTimeFrame {
   @Validate(IsAddress)
   wallet: string
@@ -127,7 +119,14 @@ export class RequestTimeFrame {
 
   @Type(() => Number)
   to?: number
+}
 
+export class RequestLiveTimeFrame {
+  @Validate(IsAddress)
+  wallet: string
+
+  @Validate(IsAddress)
+  tranche: string
 }
 
 export class RequestChart extends RequestTimeFrame {

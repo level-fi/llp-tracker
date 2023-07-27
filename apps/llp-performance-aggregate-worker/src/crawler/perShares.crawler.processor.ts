@@ -189,7 +189,7 @@ export class PerSharesCrawlerProcessor {
     //
     const items = Object.values(response).flat()
     return items.map(
-      (c): PerShareResponse => ({
+      (c: any): PerShareResponse => ({
         id: c.id,
         timestamp: c.timestamp,
         tranche: c.tranche.toLowerCase(),

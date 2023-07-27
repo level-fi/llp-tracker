@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { WorkerController } from './worker.controller'
 import { WorkerService } from './worker.service'
 import { ConfigModule } from '@nestjs/config'
 import config from 'llp-aggregator-services/dist/config'
@@ -27,7 +26,6 @@ import { TrancheModule } from 'llp-aggregator-services/dist/tranche'
     TimeframeModule,
     TrancheModule,
   ],
-  controllers: [WorkerController],
   providers: [
     WorkerService,
     WorkerConsumer,

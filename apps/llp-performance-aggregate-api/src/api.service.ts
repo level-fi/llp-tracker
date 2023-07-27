@@ -149,61 +149,9 @@ export class ApiService {
     }
   }
 
-  async queryTimeFrames(
-    query: RequestTimeFrame,
-    queries: QueryDslQueryContainer[] = [],
-  ) {
-    const sort = query.sort
-    queries.push({
-      term: {
-        wallet: query.wallet.toLowerCase(),
-      },
-    })
-    queries.push({
-      term: {
-        tranche: query.tranche.toLowerCase(),
-      },
-    })
-    if (query.from || query.to) {
-      const dateRange: QueryDslRangeQuery = {}
-      if (query.from) {
-        dateRange.gte = query.from
-      }
-      if (query.to) {
-        dateRange.lte = query.to
-      }
-      queries.push({
-        range: {
-          to: dateRange,
-        },
-      })
-    }
-    const results = await this.esService.search<AggreatedData>({
-      index: this.utilService.aggregatedDataIndex,
-      query: {
-        bool: {
-          must: queries,
-        },
-      },
-      size: query.size,
-      from: query.size * (query.page - 1),
-      sort: [
-        {
-          to: ['asc', 'desc'].includes(sort) ? sort : 'desc',
-        },
-      ],
-    })
-    const totalItems = (results.hits.total as SearchTotalHits).value
-    const total = Math.ceil(totalItems / query.size)
-    return {
-      source: results.hits.hits?.map((c) => c._source) || [],
-      totalItems,
-      total,
-    }
-  }
-
   async getLiveTimeFrame(query: RequestLiveTimeFrame) {
     const lastFrame = await this.esService.search<AggreatedData>({
+      index: this.utilService.aggregatedDataIndex,
       size: 1,
       query: {
         bool: {
@@ -282,6 +230,59 @@ export class ApiService {
         nominalApr: live.nomialApr,
         netApr: live.netApr,
       },
+    }
+  }
+
+  async queryTimeFrames(
+    query: RequestTimeFrame,
+    queries: QueryDslQueryContainer[] = [],
+  ) {
+    const sort = query.sort
+    queries.push({
+      term: {
+        wallet: query.wallet.toLowerCase(),
+      },
+    })
+    queries.push({
+      term: {
+        tranche: query.tranche.toLowerCase(),
+      },
+    })
+    if (query.from || query.to) {
+      const dateRange: QueryDslRangeQuery = {}
+      if (query.from) {
+        dateRange.gte = query.from
+      }
+      if (query.to) {
+        dateRange.lte = query.to
+      }
+      queries.push({
+        range: {
+          to: dateRange,
+        },
+      })
+    }
+    const results = await this.esService.search<AggreatedData>({
+      index: this.utilService.aggregatedDataIndex,
+      query: {
+        bool: {
+          must: queries,
+        },
+      },
+      size: query.size,
+      from: query.size * (query.page - 1),
+      sort: [
+        {
+          to: ['asc', 'desc'].includes(sort) ? sort : 'desc',
+        },
+      ],
+    })
+    const totalItems = (results.hits.total as SearchTotalHits).value
+    const total = Math.ceil(totalItems / query.size)
+    return {
+      source: results.hits.hits?.map((c) => c._source) || [],
+      totalItems,
+      total,
     }
   }
 
