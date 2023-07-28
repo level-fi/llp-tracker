@@ -12,6 +12,7 @@ import { PerSharesCrawler } from './crawler/perShares.crawler'
 import { TimeFrameScheduler } from './scheduler/timeFrame.scheduler'
 import { TimeframeModule } from 'llp-aggregator-services/dist/timeFrame'
 import { CheckpointScheduler } from './scheduler/checkPoint.scheduler'
+import { PricesCrawler } from './crawler/prices.crawler'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CheckpointScheduler } from './scheduler/checkPoint.scheduler'
     ApiService,
     CheckpointCrawler,
     PerSharesCrawler,
+    PricesCrawler,
     TimeFrameScheduler,
     CheckpointScheduler,
   ],

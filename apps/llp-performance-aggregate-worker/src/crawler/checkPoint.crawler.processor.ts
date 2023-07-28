@@ -1,6 +1,10 @@
 import { checkPointMapping } from 'llp-aggregator-services/dist/es'
 import { RedisService } from 'llp-aggregator-services/dist/queue'
-import { CheckpointCrawlerJob, CheckpointResponse, Checkpoint } from 'llp-aggregator-services/dist/type'
+import {
+  CheckpointCrawlerJob,
+  CheckpointResponse,
+  Checkpoint,
+} from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { TimeframeService } from 'llp-aggregator-services/dist/timeFrame'
 import { InjectQueue } from '@nestjs/bull'
@@ -125,8 +129,6 @@ export class CheckpointCrawlerProcessor {
         job.tranche,
         insertedCheckpoints.map((c) => c.wallet),
       ),
-      // store price histories
-      this.storeLPPrice(job.tranche, timeFrames),
       // store cummulative of value and amount
       this.storeCummulativeChange(insertedCheckpoints),
     ])
@@ -205,7 +207,7 @@ export class CheckpointCrawlerProcessor {
     delete response['_meta']
     //
     const items = Object.values(response).flat()
-    return items.map((c): CheckpointResponse => {
+    return items.map((c: any): CheckpointResponse => {
       const amount = BigNumber.from(c.llpAmount)
       const price = BigNumber.from(c.llpPrice)
       const value = amount.mul(price)
@@ -268,16 +270,6 @@ export class CheckpointCrawlerProcessor {
     return this.redisService.client.sadd(
       this.utilService.getPendingWalletsKey(tranche),
       wallets,
-    )
-  }
-
-  storeLPPrice(tranche: string, checkPointResponse: CheckpointResponse[]) {
-    if (!checkPointResponse.length) {
-      return
-    }
-    return this.redisService.client.zadd(
-      this.utilService.getTranchePriceKey(tranche),
-      ...checkPointResponse.flatMap((c) => [c.timestamp, c.price.toString()]),
     )
   }
 

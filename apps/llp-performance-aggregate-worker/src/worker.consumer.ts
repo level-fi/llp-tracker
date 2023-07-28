@@ -1,6 +1,7 @@
 import {
   CheckpointCrawlerJob,
   PerSharesCrawlerJob,
+  PricesCrawlerJob,
   TimeFrameBuildJob,
   TimeFrameNewCronCheckpointJob,
   TimeFrameTriggerJob,
@@ -15,6 +16,7 @@ import { TimeFrameBuildProcessor } from './processor/timeFrame.build.processor'
 import { TimeFrameCronProcessor } from './processor/timeFrame.cron.processor'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { RedisService } from 'llp-aggregator-services/dist/queue'
+import { PricesCrawlerProcessor } from './crawler/prices.crawler.processor'
 
 @Processor()
 export class WorkerConsumer {
@@ -24,6 +26,7 @@ export class WorkerConsumer {
     private readonly timeFrameBuildProcessor: TimeFrameBuildProcessor,
     private readonly checkpointCrawlerProcessor: CheckpointCrawlerProcessor,
     private readonly perSharesCrawlerProcessor: PerSharesCrawlerProcessor,
+    private readonly pricesCrawlerProcessor: PricesCrawlerProcessor,
     private readonly timeFrameTriggerProcessor: TimeFrameTriggerProcessor,
     private readonly timeFrameCronProcessor: TimeFrameCronProcessor,
     private readonly utilService: UtilService,
@@ -44,6 +47,14 @@ export class WorkerConsumer {
   onUpdateFeePerShares(job: Job) {
     const crawlerData = job.data as PerSharesCrawlerJob
     return this.perSharesCrawlerProcessor.update(crawlerData)
+  }
+
+  @Process({
+    name: 'crawler.prices',
+  })
+  onUpdatePrices(job: Job) {
+    const crawlerData = job.data as PricesCrawlerJob
+    return this.pricesCrawlerProcessor.update(crawlerData)
   }
 
   @Process({
