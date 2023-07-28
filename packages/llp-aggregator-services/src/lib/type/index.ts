@@ -1,11 +1,16 @@
-import { IsAddress } from '../validator'
 import { Type } from 'class-transformer'
 import { IsInt, IsNotEmpty, Max, Min, Validate } from 'class-validator'
 import { BigNumber } from 'ethers'
+import { IsAddress } from '../validator'
 
 export enum PERSHARES_TYPE {
   FEE,
   PNL,
+}
+
+export interface PriceResponse {
+  timestamp: number
+  price: BigNumber
 }
 
 export interface CheckpointResponse {
@@ -94,14 +99,6 @@ export class AggreatedData {
   histories: AggreatedDataHistory[]
 }
 
-export class RequestLiveTimeFrame {
-  @Validate(IsAddress)
-  wallet: string
-
-  @Validate(IsAddress)
-  tranche: string
-}
-
 export class RequestTimeFrame {
   @Validate(IsAddress)
   wallet: string
@@ -127,7 +124,14 @@ export class RequestTimeFrame {
 
   @Type(() => Number)
   to?: number
+}
 
+export class RequestLiveTimeFrame {
+  @Validate(IsAddress)
+  wallet: string
+
+  @Validate(IsAddress)
+  tranche: string
 }
 
 export class RequestChart extends RequestTimeFrame {
@@ -139,6 +143,10 @@ export class RequestChart extends RequestTimeFrame {
 }
 
 export interface CheckpointCrawlerJob {
+  tranche: string
+}
+
+export interface PricesCrawlerJob {
   tranche: string
 }
 

@@ -1,4 +1,5 @@
 export default () => ({
+  env: process.env.NODE_ENV,
   app: {
     port: +process.env.API_PORT || 3001,
   },
@@ -8,8 +9,8 @@ export default () => ({
   endpoint: {
     snapshot: process.env.SNAPSHOT_ENDPOINT,
   },
-  cronStartDate: process.env.CRON_START_DATE,
-  prefix: process.env.PREFIX,
+  cronStartDate: +process.env.CRON_START_DATE,
+  version: process.env.VERSION,
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: +process.env.REDIS_PORT || 6379,
@@ -37,6 +38,7 @@ export default () => ({
   crawler: {
     checkPoint: process.env.CRAWLER_CHECKPOINT,
     perShares: process.env.CRAWLER_PER_SHARES,
+    prices: process.env.CRAWLER_PRICES,
     maxQuery: +process.env.CRAWLER_MAX_QUERY || 5,
     pageSize: +process.env.CRAWLER_PAGE_SIZE || 1000,
   },
@@ -47,7 +49,10 @@ export default () => ({
     checkPoint: process.env.SCHEDULER_CHECKPOINT,
   },
   chainConfig: {
-    chainId: process.env.CHAINID,
+    chainId: process.env.CHAIN_ID,
     tranches: process.env.CHAINCONFIG_TRANCHES,
+  },
+  auth: {
+    apikey: process.env.API_KEY,
   },
 })

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { WorkerController } from './worker.controller'
 import { WorkerService } from './worker.service'
 import { ConfigModule } from '@nestjs/config'
 import config from 'llp-aggregator-services/dist/config'
@@ -14,6 +13,7 @@ import { TimeFrameTriggerProcessor } from './processor/timeFrame.trigger.process
 import { TimeFrameCronProcessor } from './processor/timeFrame.cron.processor'
 import { TimeframeModule } from 'llp-aggregator-services/dist/timeFrame'
 import { TrancheModule } from 'llp-aggregator-services/dist/tranche'
+import { PricesCrawlerProcessor } from './crawler/prices.crawler.processor'
 
 @Module({
   imports: [
@@ -27,12 +27,12 @@ import { TrancheModule } from 'llp-aggregator-services/dist/tranche'
     TimeframeModule,
     TrancheModule,
   ],
-  controllers: [WorkerController],
   providers: [
     WorkerService,
     WorkerConsumer,
     CheckpointCrawlerProcessor,
     PerSharesCrawlerProcessor,
+    PricesCrawlerProcessor,
     TimeFrameTriggerProcessor,
     TimeFrameBuildProcessor,
     TimeFrameCronProcessor,

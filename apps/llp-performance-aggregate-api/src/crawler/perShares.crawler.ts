@@ -1,4 +1,7 @@
-import { PerSharesCrawlerJob, PERSHARES_TYPE } from 'llp-aggregator-services/dist/type'
+import {
+  PerSharesCrawlerJob,
+  PERSHARES_TYPE,
+} from 'llp-aggregator-services/dist/type'
 import { UtilService } from 'llp-aggregator-services/dist/util'
 import { InjectQueue } from '@nestjs/bull'
 import { OnModuleInit } from '@nestjs/common'

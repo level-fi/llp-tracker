@@ -1,158 +1,164 @@
-import { AggreatedData, CheckpointResponse } from "../type";
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { BigNumber, BigNumberish, utils } from "ethers";
-import { formatUnits, isAddress } from "ethers/lib/utils";
+import { AggreatedData, CheckpointResponse } from '../type'
+import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { BigNumber, BigNumberish, utils } from 'ethers'
+import { formatUnits, isAddress } from 'ethers/lib/utils'
 
 @Injectable()
 export class UtilService {
   get valueDecimals(): number {
-    const defaultValue = 30;
+    const defaultValue = 30
     if (!this.configService) {
-      return defaultValue;
+      return defaultValue
     }
-    return this.configService.get<number>("decimals.value") || defaultValue;
+    return this.configService.get<number>('decimals.value') || defaultValue
   }
 
   get lpTokenDecimals(): number {
-    const defaultValue = 18;
+    const defaultValue = 18
     if (!this.configService) {
-      return defaultValue;
+      return defaultValue
     }
-    return this.configService.get<number>("decimals.amount") || defaultValue;
+    return this.configService.get<number>('decimals.amount') || defaultValue
   }
 
   get feePerSharesDecimals(): number {
-    const defaultValue = 24;
+    const defaultValue = 24
     if (!this.configService) {
-      return defaultValue;
+      return defaultValue
     }
-    const based = this.configService.get<number>("decimals.fee") || 12;
-    return this.valueDecimals - this.lpTokenDecimals + based;
+    const based = this.configService.get<number>('decimals.fee') || 12
+    return this.valueDecimals - this.lpTokenDecimals + based
   }
 
   get pnlPerSharesDecimals(): number {
-    const defaultValue = 24;
+    const defaultValue = 24
     if (!this.configService) {
-      return defaultValue;
+      return defaultValue
     }
-    const based = this.configService.get<number>("decimals.pnl") || 12;
-    return this.valueDecimals - this.lpTokenDecimals + based;
+    const based = this.configService.get<number>('decimals.pnl') || 12
+    return this.valueDecimals - this.lpTokenDecimals + based
   }
 
   get env(): string {
-    return this.configService.get<string>("NODE_ENV");
+    return this.configService.get<string>('NODE_ENV')
   }
 
   get app(): string {
-    return "llp";
+    return 'llp'
   }
 
   get version(): string {
-    return this.configService.get<string>("version");
+    return this.configService.get<string>('version')
   }
 
   get aggregatedDataIndex(): string {
-    const index = this.configService.get<string>("es.indicies.aggregatedData");
+    const index = this.configService.get<string>('es.indicies.aggregatedData')
     if (index) {
-      return index;
+      return index
     }
-    return `${this.app}_${this.chainId}_${this.version}_${this.env}_aggregated`;
+    return `${this.app}_${this.chainId}_${this.version}_${this.env}_aggregated`
   }
 
   get checkPointIndex(): string {
-    const index = this.configService.get<string>("es.indicies.checkPoint");
+    const index = this.configService.get<string>('es.indicies.checkPoint')
     if (index) {
-      return index;
+      return index
     }
-    return `${this.app}_${this.chainId}_${this.version}_${this.env}_checkpoints`;
+    return `${this.app}_${this.chainId}_${this.version}_${this.env}_checkpoints`
   }
 
   get perSharesIndex(): string {
-    const index = this.configService.get<string>("es.indicies.pershares");
+    const index = this.configService.get<string>('es.indicies.pershares')
     if (index) {
-      return index;
+      return index
     }
-    return `${this.app}_${this.chainId}_${this.version}_${this.env}_pershares`;
+    return `${this.app}_${this.chainId}_${this.version}_${this.env}_pershares`
   }
 
   get tranches(): string[] {
-    const raw = this.configService.get<string>("chainConfig.tranches");
+    const raw = this.configService.get<string>('chainConfig.tranches')
     if (!raw) {
-      return;
+      return
     }
     const data = raw
       .toLowerCase()
-      .split(",")
-      .filter((c) => isAddress(c));
-    return data.filter((c, i) => data.indexOf(c) === i);
+      .split(',')
+      .filter((c) => isAddress(c))
+    return data.filter((c, i) => data.indexOf(c) === i)
   }
 
   get chainId(): number {
-    return this.configService.get<number>("chainConfig.chainId");
+    return this.configService.get<number>('chainConfig.chainId')
   }
 
   constructor(private readonly configService: ConfigService) {}
 
   parseBigNumber(value: BigNumberish, decimals: number) {
     if (!value) {
-      return;
+      return
     }
-    return parseFloat(formatUnits(BigNumber.from(value), decimals));
+    return parseFloat(formatUnits(BigNumber.from(value), decimals))
   }
 
   getCheckpointLastSyncedKey(tranche: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:crawler:${tranche.toLowerCase()}:checkPoint`;
+    }:crawler:${tranche.toLowerCase()}:checkPoint`
   }
 
   getFeePerSharesLastSyncedKey(tranche: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:crawler:${tranche.toLowerCase()}:fee_per_shares`;
+    }:crawler:${tranche.toLowerCase()}:fee_per_shares`
   }
 
   getPnLPerSharesLastSyncedKey(tranche: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:crawler:${tranche.toLowerCase()}:pnl_per_shares`;
+    }:crawler:${tranche.toLowerCase()}:pnl_per_shares`
+  }
+
+  getPricesLastSyncedKey(tranche: string, chainId = this.chainId) {
+    return `${this.app}:${chainId}:${this.version}:${
+      this.env
+    }:crawler:${tranche.toLowerCase()}:prices`
   }
 
   getTranchePerSharesSummaryKey(prefix: string, timestamp: number | string) {
-    return `${prefix}:${timestamp}`;
+    return `${prefix}:${timestamp}`
   }
 
   getWalletsKey(tranche: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:tranche:${tranche.toLowerCase()}:wallets`;
+    }:tranche:${tranche.toLowerCase()}:wallets`
   }
 
   getPendingWalletsKey(tranche: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:tranche:${tranche.toLowerCase()}:pending_wallets`;
+    }:tranche:${tranche.toLowerCase()}:pending_wallets`
   }
 
   getTimestampKey(tranche: string, wallet: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:tranche:${tranche.toLowerCase()}:timestamp:${wallet.toLowerCase()}`;
+    }:tranche:${tranche.toLowerCase()}:timestamp:${wallet.toLowerCase()}`
   }
 
   getCronCheckpointKey(chainId = this.chainId) {
-    return `${this.app}:${chainId}:${this.version}:${this.env}:checkPoints`;
+    return `${this.app}:${chainId}:${this.version}:${this.env}:checkPoints`
   }
 
   getTranchePriceKey(tranche: string, chainId = this.chainId) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:tranche:${tranche.toLowerCase()}:prices`;
+    }:tranche:${tranche.toLowerCase()}:prices`
   }
 
   getBlockSyncedKey(chainId = this.chainId) {
-    return `${this.app}:${chainId}:${this.version}:${this.env}:last_synced`;
+    return `${this.app}:${chainId}:${this.version}:${this.env}:last_synced`
   }
 
   getCheckpointValueSummaryKey(
@@ -163,7 +169,7 @@ export class UtilService {
   ) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:tranche:${tranche.toLowerCase()}:checkpoint_values:${wallet.toLowerCase()}:${timestamp}`;
+    }:tranche:${tranche.toLowerCase()}:checkpoint_values:${wallet.toLowerCase()}:${timestamp}`
   }
 
   getCheckpointAmountSummaryKey(
@@ -174,15 +180,15 @@ export class UtilService {
   ) {
     return `${this.app}:${chainId}:${this.version}:${
       this.env
-    }:tranche:${tranche.toLowerCase()}:checkpoint_amounts:${wallet.toLowerCase()}:${timestamp}`;
+    }:tranche:${tranche.toLowerCase()}:checkpoint_amounts:${wallet.toLowerCase()}:${timestamp}`
   }
 
   generateAggregatedId(item: AggreatedData, chainId = this.chainId) {
-    const based = `${item.wallet}_${chainId}_${item.tranche}_${item.from}_${item.to}_${item.valueMovement.fee}_${item.valueMovement.pnl}_${item.valueMovement.price}`;
-    return utils.id(based);
+    const based = `${item.wallet}_${chainId}_${item.tranche}_${item.from}_${item.to}_${item.valueMovement.fee}_${item.valueMovement.pnl}_${item.valueMovement.price}`
+    return utils.id(based)
   }
 
   generateCheckpointId(item: CheckpointResponse) {
-    return utils.id(item.id);
+    return utils.id(item.id)
   }
 }
