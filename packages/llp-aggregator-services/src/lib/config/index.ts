@@ -38,6 +38,7 @@ export default () => ({
   crawler: {
     checkPoint: process.env.CRAWLER_CHECKPOINT,
     perShares: process.env.CRAWLER_PER_SHARES,
+    prices: process.env.CRAWLER_PRICES,
     maxQuery: +process.env.CRAWLER_MAX_QUERY || 5,
     pageSize: +process.env.CRAWLER_PAGE_SIZE || 1000,
   },

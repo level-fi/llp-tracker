@@ -273,6 +273,16 @@ export class TimeframeService {
     const graphNumberOfFee = feePerShares?.[0]?.index
     const graphNumberOfPnl = pnlPerShares?.[0]?.index
 
+    // checking prices
+    const prices = await this.redisService.client.zrevrangebyscore(
+      this.utilService.getTranchePriceKey(tranche),
+      Infinity,
+      lastGraphTimestamp,
+      'LIMIT',
+      0,
+      1
+    )
+
     this.logger.debug(`[isReadyForAggreate] ${tranche} check for ready build
     subgraph stats:
         checkPoints:    ${totalGraphCheckpoint}    
@@ -282,9 +292,14 @@ export class TimeframeService {
         checkPoints:    ${totalESCheckpoint}
         fee:            ${numberOfFee}
         pnl:            ${numberOfPnL}
+    prices:             ${prices?.[0]}
 `)
 
-    return numberOfFee === graphNumberOfFee && numberOfPnL === graphNumberOfPnl
+    return (
+      numberOfFee >= graphNumberOfFee &&
+      numberOfPnL >= graphNumberOfPnl &&
+      !!prices?.length
+    )
   }
 
   generateCronCheckpoints(timeseries: number[]): number[] {

@@ -129,8 +129,6 @@ export class CheckpointCrawlerProcessor {
         job.tranche,
         insertedCheckpoints.map((c) => c.wallet),
       ),
-      // store price histories
-      this.storeLPPrice(job.tranche, timeFrames),
       // store cummulative of value and amount
       this.storeCummulativeChange(insertedCheckpoints),
     ])
@@ -272,16 +270,6 @@ export class CheckpointCrawlerProcessor {
     return this.redisService.client.sadd(
       this.utilService.getPendingWalletsKey(tranche),
       wallets,
-    )
-  }
-
-  storeLPPrice(tranche: string, checkPointResponse: CheckpointResponse[]) {
-    if (!checkPointResponse.length) {
-      return
-    }
-    return this.redisService.client.zadd(
-      this.utilService.getTranchePriceKey(tranche),
-      ...checkPointResponse.flatMap((c) => [c.timestamp, c.price.toString()]),
     )
   }
 

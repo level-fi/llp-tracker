@@ -119,6 +119,12 @@ export class UtilService {
     }:crawler:${tranche.toLowerCase()}:pnl_per_shares`
   }
 
+  getPricesLastSyncedKey(tranche: string, chainId = this.chainId) {
+    return `${this.app}:${chainId}:${this.version}:${
+      this.env
+    }:crawler:${tranche.toLowerCase()}:prices`
+  }
+
   getTranchePerSharesSummaryKey(prefix: string, timestamp: number | string) {
     return `${prefix}:${timestamp}`
   }

@@ -8,6 +8,11 @@ export enum PERSHARES_TYPE {
   PNL,
 }
 
+export interface PriceResponse {
+  timestamp: number
+  price: BigNumber
+}
+
 export interface CheckpointResponse {
   id: string
   isRemove: boolean
@@ -138,6 +143,10 @@ export class RequestChart extends RequestTimeFrame {
 }
 
 export interface CheckpointCrawlerJob {
+  tranche: string
+}
+
+export interface PricesCrawlerJob {
   tranche: string
 }
 
