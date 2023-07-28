@@ -199,7 +199,7 @@ export const queryTimeFrames = (
 export const queryLiveFrame = (chainId: number, tranche: string, user: string, end: Date) => {
   const now = new Date();
   const enable =
-    end.getFullYear() === now.getFullYear() && end.getMonth() === now.getMonth() && end.getDate() === now.getDate();
+    end.getFullYear() >= now.getFullYear() && end.getMonth() >= now.getMonth() && end.getDate() >= now.getDate();
   return {
     queryKey: ['fetch', 'chainId', chainId, 'liveFrame', tranche, 'user', user, enable],
     enabled: !!chainId && !!user && !!tranche && enable,
@@ -351,7 +351,6 @@ export const queryLvlPrice = (chainId: number) => ({
     return BigInt(parsed.price.price);
   },
 });
-
 
 export const queryLevelMasterRewardHistory = (chainId: number) => ({
   queryKey: ['graph', 'chainId', chainId, 'levelMasterReward'],
