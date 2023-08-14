@@ -90,18 +90,21 @@ export class TimeFrameBuildProcessor {
               const id = this.utilService.generateAggregatedId(current)
               removeItems[wallet].push(id)
               operations.push({
-                create: {
+                update: {
                   _id: id,
                 },
               })
-              operations.push(current)
+              operations.push({
+                doc: current,
+                doc_as_upsert: true,
+              })
             })
           }),
         )
       }),
     )
 
-    const createResponse = await this.esService.bulk({
+    const updateResponse = await this.esService.bulk({
       index: this.utilService.aggregatedDataIndex,
       operations: operations,
       refresh: true,
@@ -142,17 +145,17 @@ export class TimeFrameBuildProcessor {
       conflicts: 'proceed',
       refresh: true,
     })
-    const [skipped, inserted] = [
-      createResponse.items.filter((c) => c?.create?.status === 409).length,
-      createResponse.items.filter((c) => c?.create?.status === 201).length,
+    const [updated, inserted] = [
+      updateResponse.items.filter((c) => c?.update?.status === 200).length,
+      updateResponse.items.filter((c) => c?.update?.status === 201).length,
     ]
     this.logger.debug(`
     [update] info of lp performance
       tranche:    ${tranche}
-      skipped:    ${skipped}
+      skipped:    ${updated}
       inserted:   ${inserted}
       deleted:    ${deleteResponse.deleted}
-      failed:     ${createResponse.items.length - skipped - inserted}
+      failed:     ${updateResponse.items.length - updated - inserted}
     `)
   }
 }

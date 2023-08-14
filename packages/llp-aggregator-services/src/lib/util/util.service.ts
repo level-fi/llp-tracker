@@ -184,7 +184,7 @@ export class UtilService {
   }
 
   generateAggregatedId(item: AggreatedData, chainId = this.chainId) {
-    const based = `${item.wallet}_${chainId}_${item.tranche}_${item.from}_${item.to}_${item.valueMovement.fee}_${item.valueMovement.pnl}_${item.valueMovement.price}`
+    const based = `${item.wallet}_${chainId}_${item.tranche}_${item.from}_${item.to}`
     return utils.id(based)
   }
 
