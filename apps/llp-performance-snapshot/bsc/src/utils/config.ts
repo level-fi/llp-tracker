@@ -30,6 +30,7 @@ export const config: Config = {
     Address.fromString('0x0000000000000000000000000000000000000000'),
     Address.fromString('0x1Ab33A7454427814a71F128109fE5B498Aa21E5d'), // farm
     Address.fromString('0x5aE081b6647aEF897dEc738642089D4BDa93C0e7'), // farm v2
+    Address.fromString('0x506137d1Ae62685506FCcb7E55457c976425F13a'), // farm v3
     Address.fromString('0xBD8638C1fF477275E49aaAe3E4691b74AE76BeCd'), // Liquidity Router
     Address.fromString('0x70f1555889dD1bD458A430bD57D22c12C6FCF9a4'), // LockDrop Old
     Address.fromString('0xd804ea7306abe2456bdd04a31f6f6a2f55dc0d21'), // LockDrop

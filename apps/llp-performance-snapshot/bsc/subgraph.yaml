@@ -269,3 +269,30 @@ dataSources:
         - event: EmergencyWithdraw(indexed address,indexed uint256,uint256,indexed address)
           handler: handleEmergencyWithdraw
     network: bsc
+  - kind: ethereum
+    name: LevelMasterV3
+    source:
+      abi: LevelMaster
+      address: '0x506137d1Ae62685506FCcb7E55457c976425F13a'
+      startBlock: 31270083
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/levelmaster.ts
+      entities:
+        - WalletTranche
+        - WalletTrancheHistory
+      abis:
+        - name: Pool
+          file: ./abis/Pool.json
+        - name: LevelMaster
+          file: ./abis/LevelMaster.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleDeposit
+        - event: Withdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleWithdraw
+        - event: EmergencyWithdraw(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleEmergencyWithdraw
+    network: bsc

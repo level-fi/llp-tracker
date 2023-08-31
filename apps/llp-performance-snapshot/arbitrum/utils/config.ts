@@ -28,7 +28,8 @@ export const config: Config = {
   ],
   excludeTrackLp: [
     Address.fromString('0x0000000000000000000000000000000000000000'),
-    Address.fromString('0x0180dee5Df18eBF76642e50FaaEF426f7b2874f7'), // farm
+    Address.fromString('0x0180dee5Df18eBF76642e50FaaEF426f7b2874f7'), // farm v2
+    Address.fromString('0xC18c952F800516E1eef6aB482F3d331c84d43d38'), // farm v3
     Address.fromString('0x1E46Ab9D3D9e87b95F2CD802208733C90a608805'), // Liquidity Router
     Address.fromString('0xf37DAc12B916356c44585333F33Cd2dF366dA487'), // LlpRewardDistributor
   ],
