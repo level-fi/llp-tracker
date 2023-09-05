@@ -101,7 +101,7 @@ export class PricesCrawlerProcessor {
         }
       }
     `
-    const response = await this.graphqlClient.request(query, {
+    const response: any = await this.graphqlClient.request(query, {
       tranche: job.tranche,
       take: take,
       timestamp: lastSynced,

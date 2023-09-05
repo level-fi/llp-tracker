@@ -9,6 +9,10 @@ import { UtilService } from 'llp-aggregator-services/dist/util'
 import { Injectable, Logger } from '@nestjs/common'
 import { ElasticsearchService } from '@nestjs/elasticsearch'
 import { WorkerService } from '../worker.service'
+import {
+  BulkResponse,
+  DeleteByQueryResponse,
+} from '@elastic/elasticsearch/lib/api/types'
 
 @Injectable()
 export class TimeFrameBuildProcessor {
@@ -90,69 +94,80 @@ export class TimeFrameBuildProcessor {
               const id = this.utilService.generateAggregatedId(current)
               removeItems[wallet].push(id)
               operations.push({
-                create: {
+                update: {
                   _id: id,
                 },
               })
-              operations.push(current)
+              operations.push({
+                doc: current,
+                doc_as_upsert: true,
+              })
             })
           }),
         )
       }),
     )
 
-    const createResponse = await this.esService.bulk({
-      index: this.utilService.aggregatedDataIndex,
-      operations: operations,
-      refresh: true,
-    })
-    const deleteResponse = await this.esService.deleteByQuery({
-      index: this.utilService.aggregatedDataIndex,
-      query: {
-        bool: {
-          must: [
-            ...Object.entries(removeItems).map(([wallet, ids]) => ({
-              bool: {
-                must: [
-                  {
-                    bool: {
-                      must_not: {
-                        terms: {
-                          _id: ids,
+    let updateResponse: BulkResponse, deleteResponse: DeleteByQueryResponse
+    if (operations.length) {
+      updateResponse = await this.esService.bulk({
+        index: this.utilService.aggregatedDataIndex,
+        operations: operations,
+        refresh: true,
+      })
+    }
+    const removeEntities = Object.entries(removeItems)
+    if (removeEntities.length) {
+      deleteResponse = await this.esService.deleteByQuery({
+        index: this.utilService.aggregatedDataIndex,
+        query: {
+          bool: {
+            must: [
+              ...Object.entries(removeItems).map(([wallet, ids]) => ({
+                bool: {
+                  must: [
+                    {
+                      bool: {
+                        must_not: {
+                          terms: {
+                            _id: ids,
+                          },
                         },
                       },
                     },
-                  },
-                  {
-                    term: {
-                      wallet: wallet,
+                    {
+                      term: {
+                        wallet: wallet,
+                      },
                     },
-                  },
-                ],
+                  ],
+                },
+              })),
+              {
+                term: {
+                  tranche: tranche,
+                },
               },
-            })),
-            {
-              term: {
-                tranche: tranche,
-              },
-            },
-          ],
+            ],
+          },
         },
-      },
-      conflicts: 'proceed',
-      refresh: true,
-    })
-    const [skipped, inserted] = [
-      createResponse.items.filter((c) => c?.create?.status === 409).length,
-      createResponse.items.filter((c) => c?.create?.status === 201).length,
+        conflicts: 'proceed',
+        refresh: true,
+      })
+    }
+    const [updated, inserted] = [
+      updateResponse?.items.filter((c) => c?.update?.status === 200).length ||
+        0,
+      updateResponse?.items.filter((c) => c?.update?.status === 201).length ||
+        0,
     ]
     this.logger.debug(`
     [update] info of lp performance
       tranche:    ${tranche}
-      skipped:    ${skipped}
+      skipped:    ${updated}
       inserted:   ${inserted}
-      deleted:    ${deleteResponse.deleted}
-      failed:     ${createResponse.items.length - skipped - inserted}
+      deleted:    ${deleteResponse?.deleted}
+      failed:     ${(updateResponse?.items.length || 0) - updated - inserted}
     `)
   }
 }

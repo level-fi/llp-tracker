@@ -34,7 +34,7 @@ export class TimeFrameCronProcessor {
         wallets.push(wallet)
       }),
     )
-    if (!wallets) {
+    if (!wallets || !wallets.length) {
       return
     }
     await this.redisService.client.sadd(
